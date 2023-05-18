@@ -24,7 +24,7 @@
         <KEY NAME="pm_orderid" TYPE="unique" FIELDS="pm_orderid"/>
       </KEYS>
     </TABLE>
-        <TABLE NAME="accept_cards_token" COMMENT="Save cards informations for users">
+        <TABLE NAME="paygw_paymob_accept_cards_token" COMMENT="Save cards informations for users">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="20" NOTNULL="true"  SEQUENCE="false"/>
