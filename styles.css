@@ -1,5 +1,5 @@
-.paymob-image-palce-holder{
-    height:max-content;
+.paymob-image-palce-holder {
+    height: max-content;
     max-width: 100%;
     text-align: center;
     padding-bottom: 5px;
@@ -15,23 +15,23 @@
     text-align:center;
 }
 #accepting-container {
-    width:100%;
-    margin:0.2rem auto;
-    min-width:300px;
+    width: 100%;
+    margin: 0.2rem auto;
+    min-width: 300px;
     min-height: 80vh;
 }
 #accepting-container .accept_error h1 {
-    color:#e91e63;
+    color: #e91e63;
 }
 #accepting-container .accept_iframe iframe {
-    border:none !important;
-    width:100%;
+    border: none;
+    width: 100%;
     min-height: 80vh;
 }
 #accepting-container .accept_kiosk h1 {
-    padding:0;
-    color:#4caf50;
+    padding: 0;
+    color: #4caf50;
 }
 #accepting-container .accept_kiosk p {
-    color:#03a9f4;
+    color: #03a9f4;
 }
