@@ -1,0 +1,49 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template paygw_paymob/paymob_button_placeholder
+
+    Context variables required for this template:
+    * show_accept_iframe - showing or hiding iframe according to payment method.
+    * iframeurl - the url of iframe
+
+    Example context (json):
+    {
+        show_accept_iframe: false,
+        iframeurl: https://example.com
+    }
+
+}}
+<style>
+
+</style>
+
+<div id="accepting-container">
+    {{#show_accept_iframe}}
+        <div class="accept_iframe">
+            <iframe name="accept-iframe" src="{{{iframeurl}}}"></iframe>
+        </div>
+    {{/show_accept_iframe}}
+    {{^show_accept_iframe}}
+        <div class="accept_kiosk">
+            <h2>{{# str }} kiosk_bill_reference, paygw_paymob {{/ str }}</h2>
+            <h1 id="accept_kiosk_id">{{{ref}}}</h1>
+            <p>{{# str }} kiosk_process_help_en, paygw_paymob {{/ str }}</p>
+            <p> {{# str }} kiosk_process_help_ar, paygw_paymob {{/ str }}</p>
+        </div>
+    {{/show_accept_iframe}}
+</div>

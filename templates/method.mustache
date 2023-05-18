@@ -1,0 +1,162 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template paygw_paymob/method
+
+    Context variables required for this template:
+    * fee - the amount to pay
+    * currency - the currency of this payment
+    * description - what the user paying for
+    * hascard - true if the settings for card is set
+    * haswallet - true if the settings for wallet is set
+    * haskiosk - true if the settings for kiosk is set
+    * validcurrency
+    * saved
+    * savedcardsnotify
+    * savedcards
+        * card_subtype
+        * masked_pan
+        * id
+        * token
+
+    Example context (json):
+    {
+        fee: "50.5",
+        currency: "EGP",
+        description: "for enrolment in course electronics",
+        hascard: true,
+        haswallet: true,
+        haskiosk: true,
+        validcurrency: true,
+        saved: true,
+        savedcardsnotify: "you have saved cards",
+        savedcards: {
+            id: 3,
+            token: "ASDFGHJKL",
+            card_subtype: "mastercard",
+            masked_pan: "**** **** **** 1234"
+        }
+    }
+
+}}
+<form id="paymob-method-select" action="{{globals.config.wwwroot}}/payment/gateway/paymob/process.php" class="paymob-form" method="post">
+    <div class="cost-display">
+        <span style="text-align: center;">
+            <p>{{# str }} abouttopay, paygw_paymob {{/ str}} {{{description}}}</p>
+            <strong><h2>{{{fee}}} {{{currency}}}</h2></strong>
+            <p>{{# str }} choosemethod, paygw_paymob {{/ str}}</p>
+        </span>
+    </div>
+    <div class="form-group">
+        <label for="payment-type"><h3>{{# str }} paymentmethods, paygw_paymob {{/ str}}</h3></label>
+        <div class="paymob-image-palce-holder">
+            <img src="{{globals.config.wwwroot}}/payment/gateway/paymob/img/visa_mastercard.png" class="paymob-payment-method-image"/>
+        </div>
+        <select class="form-control" id="payment-type" name="method">
+            {{#hascard}}
+            <option value="card" selected>{{# str }} method_card, paygw_paymob {{/ str}}</option>
+            {{/hascard}}
+            {{#validcurrency}}
+            {{#haskiosk}}
+            <option value="kiosk">{{# str }} method_kiosk, paygw_paymob {{/ str}}</option>
+            {{/haskiosk}}
+            {{#haswallet}}
+            <option value="wallet">{{# str }} method_wallet, paygw_paymob {{/ str}}</option>
+            {{/haswallet}}
+            {{/validcurrency}}
+        </select>
+
+    </div>
+    <div class="hidden-inputs">
+        <input type="hidden" class="hidden-inputs" id="component" name="component" value="{{{component}}}">
+        <input type="hidden" class="hidden-inputs" id="paymentarea" name="paymentarea" value="{{{paymentarea}}}">
+        <input type="hidden" class="hidden-inputs" id="itemid" name="itemid" value="{{{itemid}}}">
+        <input type="hidden" class="hidden-inputs" id="description" name="description" value="{{{description}}}">
+        <input type="hidden" class="hidden-inputs" id="itemname" name="itemname" value="{{{itemname}}}">
+    </div>
+    {{#hascard}}
+    <div class="form-group" id="saved-cards-group">
+        {{#saved}}
+            <p>{{{savedcardsnotify}}}</p>
+            <div style="width: 100%;">
+            {{#savedcards}}
+                <input style="display: inline-block;" class="input-radio" id="card_{{id}}" type="radio" name="card_token" value="{{token}}">
+                <label style="display: inline-block;" for="card_{{id}}"><b>{{card_subtype}}</b>: {{masked_pan}}</label>
+                <button class="btn btn-secondary" action="deletecard.php" value="{{id}}" name="delete">{{# str }} deletecard, paygw_paymob {{/ str}}</button>
+            <br>
+            {{/savedcards}}
+                <input style="display: inline-block;" class="input-radio"  id="card_other" checked="checked" type="radio" name="card_token" value="">
+                <label style="display: inline-block;" for="card_other"><b> {{#str}} usenewcard, paygw_paymob {{/str}} </b></label>
+            </div>
+        {{/saved}}
+    </div>
+    {{/hascard}}
+    {{#haswallet}}
+    <div class="form-group" id="phone-group" style="display: none;">
+        <label for="phone-number">{{# str }} wallet_phone_number, paygw_paymob {{/ str}}</label>
+        <input type="text" class="form-control" id="phone-number" name="phone-number">
+    </div>
+    {{/haswallet}}
+    <button type="submit" class="btn btn-primary" id="paymob-modal-submit-btn">{{# str }} submit {{/ str }}</button>
+</form>
+
+<script>
+    const phoneNumberInput = document.getElementById('phone-number');
+    const phoneGroup = document.getElementById('phone-group');
+    const paymentTypeSelect = document.getElementById('payment-type');
+    const savedCardsGroup = document.getElementById('saved-cards-group');
+
+    paymentTypeSelect.addEventListener('change', () => {
+    if (paymentTypeSelect.value === 'wallet') {
+        phoneGroup.style.display = 'block';
+        savedCardsGroup.style.display = 'none';
+    } else if (paymentTypeSelect.value === 'card'){
+        phoneGroup.style.display = 'none';
+        phoneNumberInput.value = '';
+        savedCardsGroup.style.display = 'block';
+    } else {
+        phoneGroup.style.display = 'none';
+        phoneNumberInput.value = '';
+        savedCardsGroup.style.display = 'none';
+    }
+    });
+    // get references to the necessary elements
+    const imagePlaceholder = document.querySelector('.paymob-image-palce-holder');
+    // define a mapping of payment method values to image URLs
+    const imageUrls = {
+        card: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/visa_mastercard.png',
+        kiosk: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/aman.png',
+        wallet: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/Wallets.png'
+    };
+
+    // listen for changes to the payment method select element
+    paymentTypeSelect.addEventListener('change', () => {
+        // get the selected payment method value
+        const selectedValue = paymentTypeSelect.value;
+
+        // create an image element with the corresponding URL
+        const imageElement = document.createElement('img');
+        imageElement.src = imageUrls[selectedValue];
+        imageElement.classList.add('paymob-payment-method-image'); // add a class to the image element
+
+        // remove any existing images from the image placeholder
+        imagePlaceholder.innerHTML = '';
+
+        // append the new image to the image placeholder
+        imagePlaceholder.appendChild(imageElement);
+    });
+</script>

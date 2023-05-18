@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="payment/gateway/paymob/db" VERSION="20201216" COMMENT="XMLDB file for paymob payment gateway plugin"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="paygw_paymob" COMMENT="Stores paymob related information">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="pm_orderid" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="The ID of the order in paymob" SEQUENCE="false"/>
+        <FIELD NAME="paymentid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="" COMMENT="the payment id in moodle, the value added after complete success."/>
+        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="component" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="paymentarea" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="cost" TYPE="number" LENGTH="255" DECIMAL="2" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="method" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="intid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The id of integration method"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="username" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="pm_orderid" TYPE="unique" FIELDS="pm_orderid"/>
+      </KEYS>
+    </TABLE>
+        <TABLE NAME="accept_cards_token" COMMENT="Save cards informations for users">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="20" NOTNULL="true"  SEQUENCE="false"/>
+        <FIELD NAME="token" TYPE="char" LENGTH="56" NOTNULL="false" DEFAULT="" SEQUENCE="false"/>
+        <FIELD NAME="masked_pan" TYPE="char" LENGTH="19" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="card_subtype" TYPE="char" LENGTH="56" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="index" FIELDS="userid"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
