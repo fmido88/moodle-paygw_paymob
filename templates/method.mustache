@@ -55,16 +55,16 @@
 }}
 <form id="paymob-method-select" action="{{globals.config.wwwroot}}/payment/gateway/paymob/process.php" class="paymob-form" method="post">
     <div class="cost-display">
-        <span style="text-align: center;">
+        <div style="text-align: center;">
             <p>{{# str }} abouttopay, paygw_paymob {{/ str}} {{{description}}}</p>
-            <strong><h2>{{{fee}}} {{{currency}}}</h2></strong>
+            <h2><strong>{{{fee}}} {{{currency}}}</strong></h2>
             <p>{{# str }} choosemethod, paygw_paymob {{/ str}}</p>
-        </span>
+        </div>
     </div>
     <div class="form-group">
-        <label for="payment-type"><h3>{{# str }} paymentmethods, paygw_paymob {{/ str}}</h3></label>
+        <label for="payment-type" class="h3">{{# str }} paymentmethods, paygw_paymob {{/ str}}</label>
         <div class="paymob-image-palce-holder">
-            <img src="{{globals.config.wwwroot}}/payment/gateway/paymob/img/visa_mastercard.png" class="paymob-payment-method-image"/>
+            <img src="{{globals.config.wwwroot}}/payment/gateway/paymob/img/visa_mastercard.png" class="paymob-payment-method-image" alt="visa_mastercard"/>
         </div>
         <select class="form-control" id="payment-type" name="method">
             {{#hascard}}
@@ -96,7 +96,7 @@
             {{#savedcards}}
                 <input style="display: inline-block;" class="input-radio" id="card_{{id}}" type="radio" name="card_token" value="{{token}}">
                 <label style="display: inline-block;" for="card_{{id}}"><b>{{card_subtype}}</b>: {{masked_pan}}</label>
-                <button class="btn btn-secondary" action="deletecard.php" value="{{id}}" name="delete">{{# str }} deletecard, paygw_paymob {{/ str}}</button>
+                <button class="btn btn-secondary" value="{{id}}" name="delete">{{# str }} deletecard, paygw_paymob {{/ str}}</button>
             <br>
             {{/savedcards}}
                 <input style="display: inline-block;" class="input-radio"  id="card_other" checked="checked" type="radio" name="card_token" value="">
@@ -142,7 +142,11 @@
         kiosk: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/aman.png',
         wallet: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/Wallets.png'
     };
-
+    const imageAlts = {
+        card: 'visa_mastercard',
+        kiosk: 'aman',
+        wallet: 'Wallets'
+    };
     // listen for changes to the payment method select element
     paymentTypeSelect.addEventListener('change', () => {
         // get the selected payment method value
@@ -152,7 +156,7 @@
         const imageElement = document.createElement('img');
         imageElement.src = imageUrls[selectedValue];
         imageElement.classList.add('paymob-payment-method-image'); // add a class to the image element
-
+        imageElement.alt = imageAlts[selectedValue];
         // remove any existing images from the image placeholder
         imagePlaceholder.innerHTML = '';
 
