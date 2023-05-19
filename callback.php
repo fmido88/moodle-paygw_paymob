@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $obj = $jsondata['obj'];
     $string = $jsondata['obj']; // Same as $obj in this kind of request.
     $type = $jsondata['type'];
-    if ($jsondata['type'] === 'TRANSACTION') {
+    if ($type === 'TRANSACTION') {
         $string['order'] = $string['order']['id'];
         $string['is_3d_secure'] = ($string['is_3d_secure'] === true) ? 'true' : 'false';
         $string['is_auth'] = ($string['is_auth'] === true) ? 'true' : 'false';
@@ -59,9 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $string['source_data_type'] = $string['source_data']['type'];
         $string['source_data_sub_type'] = $string['source_data']['sub_type'];
         $orderid = $string['order'];
-    } else if ($jsondata['type'] === 'DELIVERY_STATUS') {
+    } else if ($type === 'DELIVERY_STATUS') {
         $string['order'] = $string['order']['id'];
         $orderid = $string['order'];
+    } else if ($type === 'TOKEN') {
+        $orderid = $obj['order_id'];
     }
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // This is a client side not server side, so let's make sure that the user is logged in.
@@ -153,8 +155,7 @@ if ($hash === $hmac) {
                 $obj['is_refund'] === false &&
                 $obj['error_occured'] === false
             ) {
-                $update->status = 'success';
-                $DB->update_record('paygw_paymob', $update);
+
                 $paymentid = helper::save_payment($payable->get_account_id(),
                                 $component,
                                 $paymentarea,
@@ -237,9 +238,11 @@ if ($hash === $hmac) {
             // This mean that the user choose to save card during payment.
             $tablename = 'paygw_paymob_accept_cards_token';
 
-            $user = core_user::get_user($userid);
+            $user = core_user::get_user_by_email($obj['email']);
+
             // Check if this user exists.
-            if ($user) {
+            // Also for security that is the same user who done the order.
+            if ($user && $userid == $user->id) {
                 // Check if this card already exists.
                 $conditions = [
                     'user_id' => $userid,
