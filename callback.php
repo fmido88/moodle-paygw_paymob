@@ -25,14 +25,16 @@ use core_payment\helper;
 use paygw_paymob\notifications;
 use paygw_paymob\paymob_helper;
 
-// Does not require login.
+// Does not require login in server side transaction process callback.
+// But it is required in client side transaction response callback.
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 global $DB;
 
 // Paymob do two kinds of callbacks.
-// First one is in request method POST and it is in json format.
-// This kind is for proccessing payments.
+// First one transaction processed callback
+// is in request method POST and it is in json format.
+// This kind is transaction response callback.
 // Second one is in request method GET.
 // This is for completed payments.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -62,6 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $orderid = $string['order'];
     }
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // This is a client side not server side, so let's make sure that the user is logged in.
+    require_login();
     // Get all the data we need from the request.
     $obj = [
         'success' => optional_param('success', '', PARAM_RAW),
@@ -151,8 +155,22 @@ if ($hash === $hmac) {
             ) {
                 $update->status = 'success';
                 $DB->update_record('paygw_paymob', $update);
-                // Notify user that the operation is success but still in progress.
-                notifications::notify($userid, $cost, $orderid, 'success_processing');
+                $paymentid = helper::save_payment($payable->get_account_id(),
+                                $component,
+                                $paymentarea,
+                                $itemid,
+                                $userid,
+                                $cost,
+                                $payable->get_currency(),
+                                'paymob'
+                            );
+                $update->status = 'success';
+                $update->paymentid = $paymentid;
+                $DB->update_record('paygw_paymob', $update);
+
+                helper::deliver_order($component, $paymentarea, $itemid, $paymentid, $userid);
+                // Notify user.
+                notifications::notify($userid, $cost, $orderid, 'success_completed', '');
 
                 // Check if there is a receipt from paymob.
                 if (isset($obj['data']['receipt_url'])) {
@@ -262,11 +280,12 @@ if ($hash === $hmac) {
             }
         }
     } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // This is the second callback from paymob, this is in case that the reansaction is completed.
-        // completion success of declined.
+
+        // This is the second callback from paymob, this is transaction response callback.
         // When the transaction is success, there is two ways that paymob send the response.
         // First that success is true.
         if (
+            (
             $obj['success'] === "true" &&
             $obj['is_voided'] === "false" &&
             $obj['is_refunded'] === "false" &&
@@ -274,46 +293,13 @@ if ($hash === $hmac) {
             $obj['is_void'] === "false" &&
             $obj['is_refund'] === "false" &&
             $obj['error_occured'] === "false"
-        ) {
+            ) || // Second case Approved in data message.
+            (!empty($obj['data_message']) &&
+            $obj['data_message'] === "Approved" )) {
 
-            $paymentid = helper::save_payment($payable->get_account_id(),
-                                                $component,
-                                                $paymentarea,
-                                                $itemid,
-                                                $userid,
-                                                $cost,
-                                                $payable->get_currency(),
-                                                'paymob'
-                                            );
-            $update->status = 'success';
-            $update->paymentid = $paymentid;
-            $DB->update_record('paygw_paymob', $update);
-
-            helper::deliver_order($component, $paymentarea, $itemid, $paymentid, $userid);
-            // Notify user.
-            notifications::notify($userid, $cost, $orderid, 'success_completed', '');
-            redirect($url, get_string('paymentsuccessful', 'paygw_paymob'), 0, 'success');
-            exit;
-        } else if ((!empty($obj['data_message']) || isset($obj['data_message'])) && $obj['data_message'] === "Approved" ) {
-            // Second that the data_message is Approved.
-            $paymentid = helper::save_payment($payable->get_account_id(),
-                                                    $component,
-                                                    $paymentarea,
-                                                    $itemid,
-                                                    $userid,
-                                                    $cost,
-                                                    $payable->get_currency(),
-                                                    'paymob'
-                                                );
-            $update->status = 'Approved';
-            $update->paymentid = $paymentid;
-            $DB->update_record('paygw_paymob', $update);
-
-            helper::deliver_order($component, $paymentarea, $itemid, $paymentid, $userid);
-
-            // Notify user.
-            notifications::notify($userid, $cost, $orderid, 'success_completed', '');
-            redirect($url, get_string('paymentsuccessful', 'paygw_paymob'), 0, 'success');
+            // Check the actual status from the transaction proccess callback.
+            $status = $DB->get_field('paygw_paymob', 'status', ['id' => $id], IGNORE_MISSING);
+            redirect($url, get_string('paymentresponse', 'paygw_paymob', $status), 0, 'success');
             exit;
         } else { // Otherwise the transaction is declined.
             $update->status = 'Declined';
