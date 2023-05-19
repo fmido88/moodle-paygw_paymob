@@ -54,17 +54,19 @@ $string['kiosk_process_help_en'] = 'To pay, Please go to the nearest Aman or Mas
 $string['kiosk_process_help_ar'] = 'طريقة الدفع: رجاء التوجه إلى أقرب فرع أمان أو محل به ماكينة أمان أومصارى و أسأل عن "مدفوعات اكسبت" و أخبرهم بالرقم المرجعي';
 $string['kiosk_bill_reference'] = 'Your Aman (or Masary) bill reference is';
 $string['messagesubject'] = 'Payment notification ({$a})';
-$string['message_success_processing'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is successful and now it is under transaction';
-$string['message_success_completed'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is successfully completed. If the item it not delivered please contact the admnistrator.';
-$string['message_pending'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you should pay {$a->cost} {$a->currency} for it is, using {$a->method} still pending and required action';
-$string['message_voided'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you suppose to pay {$a->cost} {$a->currency} for it, using {$a->method} is canceled and this amount should return to the same payment method in 48 hr, contact your bank for more information.';
-$string['message_refunded'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is refunded and the same amount should return to your account in 48 hour. Contact your bank or the service provider for more details';
-$string['message_downpayment'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is accepted as a down payment.';
-$string['message_declined'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->paymentid}) with original cost of {$a->fee} {$a->currency} at which you suppose to pay {$a->cost} {$a->currency} for it, using {$a->method} is declined. Reason: {$a->reason}';
+$string['message_success_processing'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is successful and now it is under transaction';
+$string['message_success_completed'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is successfully completed. If the item it not delivered please contact the admnistrator.';
+$string['message_pending'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you should pay {$a->cost} {$a->currency} for it is, using {$a->method} still pending and required action';
+$string['message_voided'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you suppose to pay {$a->cost} {$a->currency} for it, using {$a->method} is canceled and this amount should return to the same payment method in 48 hr, contact your bank for more information.';
+$string['message_refunded'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is refunded and the same amount should return to your account in 48 hour. Contact your bank or the service provider for more details';
+$string['message_downpayment'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you paid {$a->cost} {$a->currency} for it, using {$a->method} is accepted as a down payment.';
+$string['message_declined'] = 'Hello {$a->fullname}, You transaction of payment id: ({$a->orderid}) with original cost of {$a->fee} {$a->currency} at which you suppose to pay {$a->cost} {$a->currency} for it, using {$a->method} is declined. Reason: {$a->reason}';
 $string['messagesubject_receipt'] = 'The receipt of your last transaction';
 $string['message_payment_receipt'] = 'Hello {$a->fullname}; This is the receipt url regarding your last transaction of {$a->cost} {$a->currency} for item of cost {$a->fee} {$a->currency}
 
 Reciept: {$a->url}';
+$string['messageprovider:payment_receipt'] = 'Paymob payment receipt';
+$string['messageprovider:payment_transaction'] = 'Paymob payment transaction status';
 $string['method_card'] = 'Online Payment Card';
 $string['method_kiosk'] = 'Aman or Masary';
 $string['method_wallet'] = 'Mobile Wallet';
