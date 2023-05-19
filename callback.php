@@ -241,14 +241,14 @@ if ($hash === $hmac) {
             // Check if this user exists.
             if ($user) {
                 // Check if this card already exists.
-                $token = $DB->get_record_sql("  SELECT *
-                                                FROM $tablename
-                                                WHERE user_id = '" . $userid . "'
-                                                AND card_subtype = '" . $obj['card_subtype'] . "'
-                                                AND masked_pan = '" . $obj['masked_pan'] . "'"
-                                            );
+                $conditions = [
+                    'user_id' => $userid,
+                    'card_subtype' => $obj['card_subtype'],
+                    'masked_pan' => $obj['masked_pan'],
+                ];
+                $token = $DB->get_record($tablename, $conditions);
                 // Not exist? insert new record.
-                if (!$token) {
+                if (empty($token)) {
                     $DB->insert_record(
                         $tablename,
                         [
