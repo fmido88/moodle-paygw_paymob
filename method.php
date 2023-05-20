@@ -86,7 +86,7 @@ $templatedata->hascard = $hascard;
 $templatedata->haswallet = $haswallet;
 $templatedata->haskiosk = $haskiosk;
 
-$cards = $DB->get_records('paygw_paymob_accept_cards_token', ['userid' => $USER->id]);
+$cards = $DB->get_records('paygw_paymob_cards_token', ['userid' => $USER->id]);
 $templatedata->validcurrency = ($currency == 'EGP') ? true : false;
 
 if (!empty($cards)) {

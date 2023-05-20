@@ -313,6 +313,7 @@ class paymob_helper {
      */
     public function hash($key, $data, $type) {
         $str = '';
+        // Formating the string according to the typw or transaction callback.
         switch ($type) {
             case 'TRANSACTION':
                 $str =

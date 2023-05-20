@@ -8,11 +8,11 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="pm_orderid" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="The ID of the order in paymob" SEQUENCE="false"/>
-        <FIELD NAME="paymentid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="" COMMENT="the payment id in moodle, the value added after complete success."/>
+        <FIELD NAME="paymentid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="the payment id in moodle, the value added after complete success."/>
         <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="component" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="paymentarea" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="cost" TYPE="number" LENGTH="255" DECIMAL="2" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="cost" TYPE="number" LENGTH="10" DECIMAL="2" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="method" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="intid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The id of integration method"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
@@ -24,7 +24,7 @@
         <KEY NAME="pm_orderid" TYPE="unique" FIELDS="pm_orderid"/>
       </KEYS>
     </TABLE>
-        <TABLE NAME="paygw_paymob_accept_cards_token" COMMENT="Save cards informations for users">
+    <TABLE NAME="paygw_paymob_cards_token" COMMENT="Save cards informations for users">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="20" NOTNULL="true"  SEQUENCE="false"/>
@@ -34,8 +34,12 @@
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="userid" TYPE="index" FIELDS="userid"/>
+        <KEY NAME="token" TYPE="unique" FIELDS="token"/>
+        <KEY NAME="user" TYPE="unique" FIELDS="userid, masked_pan, card_subtype"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid" UNIQUE="false" FIELDS="userid" />
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

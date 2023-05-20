@@ -45,7 +45,7 @@ $returnbackurl = new moodle_url('/payment/gateway/paymob/method.php',
 
 // Check first if the user try to delete old card, and send back the required params.
 if ($delete) {
-    $DB->delete_records('paygw_paymob_accept_cards_token', ['id' => $delete]);
+    $DB->delete_records('paygw_paymob_cards_token', ['id' => $delete]);
 
     $msg = get_string('card_deleted', 'paygw_paymob');
     redirect($returnbackurl, $msg);

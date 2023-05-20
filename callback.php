@@ -235,7 +235,7 @@ if ($hash === $hmac) {
             die("Order updated: $orderid");
         } else if ($type == 'TOKEN') {
             // This mean that the user choose to save card during payment.
-            $tablename = 'paygw_paymob_accept_cards_token';
+            $tablename = 'paygw_paymob_cards_token';
 
             $user = core_user::get_user_by_email($obj['email']);
 
