@@ -58,6 +58,16 @@ $itemname = optional_param('itemname', '', PARAM_TEXT);
 $walletnumber = optional_param('phone-number', 0, PARAM_INT);
 $savedcardtoken = optional_param('card_token', false, PARAM_RAW);
 
+$params = [
+    'component' => $component,
+    'paymentarea' => $paymentarea,
+    'description' => $description,
+    'itemid' => $itemid,
+    'method' => $method,
+    'itemname' => $itemname,
+    'phone-number' => $walletnumber,
+    'card-token' => $savedcardtoken,
+];
 // Get all configuration perefernce.
 $config = (object) helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
 
@@ -139,7 +149,7 @@ if ($method == 'wallet') {
     // Set the context of the page.
     $PAGE->set_context(context_system::instance());
 
-    $PAGE->set_url('/blocks/credit_display/action.php', ['id' => $USER->id]);
+    $PAGE->set_url('/payment/gateway/paymob/process.php', $params);
     $PAGE->set_title(format_string('Reference key for aman or masary'));
     $PAGE->set_heading(format_string('Reference key for aman or masary'));
 
@@ -183,7 +193,7 @@ if ($method == 'wallet') {
     // Set the context of the page.
     $PAGE->set_context(context_system::instance());
 
-    $PAGE->set_url('/blocks/credit_display/action.php', ['id' => $USER->id]);
+    $PAGE->set_url('/payment/gateway/paymob/process.php', $params);
     $PAGE->set_title(format_string('Payment with bank card'));
     $PAGE->set_heading(format_string('Payment with bank card'));
 
