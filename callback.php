@@ -36,14 +36,16 @@ global $DB;
 // is in request method POST and it is in json format.
 // This kind is transaction response callback.
 // Second one is in request method GET.
-// This is for completed payments.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postdata = file_get_contents('php://input');
     $jsondata = json_decode($postdata, true);
+    // The object data we need.
     $obj = $jsondata['obj'];
+    // Prepare the string for hmac hash calculation.
     $string = $jsondata['obj']; // Same as $obj in this kind of request.
     $type = $jsondata['type'];
     if ($type === 'TRANSACTION') {
+        // Decoding string.
         $string['order'] = $string['order']['id'];
         $string['is_3d_secure'] = ($string['is_3d_secure'] === true) ? 'true' : 'false';
         $string['is_auth'] = ($string['is_auth'] === true) ? 'true' : 'false';
@@ -113,7 +115,6 @@ if (isset($config->discount) && $config->discount > 0 && isset($config->discount
     $cost = $cost * 100 / (100 - $config->discount);
 }
 
-
 // Find redirection.
 $url = new moodle_url('/');
 // Method only exists in 3.11+.
@@ -129,7 +130,7 @@ if (method_exists('\core_payment\helper', 'get_success_url')) {
 // Get the helper class to call hash().
 $helper = new paygw_paymob\paymob_helper($apikey);
 
-// Check the security hash.
+// Calculate the security hash.
 $hash = $helper->hash($hmacsecret, $string, $type);
 
 // Inisialize the data to be updated in the database.
@@ -138,12 +139,10 @@ $update->id = $id;
 $update->status = 'requested';
 
 $DB->update_record('paygw_paymob', $update);
-// Secure connection ?
+// Secure connection? Verify that the hmax sent is exactly the same as that we calculated using hmac-secret.
 if ($hash === $hmac) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($type == 'TRANSACTION') {
-            // Decode order_id.
-            $pmorderid = $obj['order']['id'];
 
             // Successful payment.
             if (
@@ -244,44 +243,31 @@ if ($hash === $hmac) {
             // Also for security that is the same user who done the order.
             if ($user && $userid == $user->id) {
                 // Check if this card already exists.
-                $conditions = [
+                $tokendata = [
                     'user_id' => $userid,
                     'card_subtype' => $obj['card_subtype'],
                     'masked_pan' => $obj['masked_pan'],
                 ];
-                $token = $DB->get_record($tablename, $conditions);
+                $token = $DB->get_record($tablename, $tokendata);
+
                 // Not exist? insert new record.
                 if (empty($token)) {
-                    $DB->insert_record(
-                        $tablename,
-                        [
-                            'user_id' => $userid,
-                            'token' => $obj['token'],
-                            'masked_pan' => $obj['masked_pan'],
-                            'card_subtype' => $obj['card_subtype']
-                        ]
-                    );
+                    $tokendata['token'] = $obj['token'];
+                    $DB->insert_record($tablename, $tokendata);
 
                 } else { // Exists? update the data.
-                    $tokenid = $DB->get_field($tablename, 'id', ['user_id' => $userid,
-                                                                'masked_pan' => $obj['masked_pan'],
-                                                                'card_subtype' => $obj['card_subtype']
-                                                                ]);
-                    $DB->update_record(
-                        $tablename,
-                        (object)[
-                            'id' => $tokenid,
-                            'user_id' => $userid,
-                            'token' => $obj['token'],
-                            'masked_pan' => $obj['masked_pan'],
-                            'card_subtype' => $obj['card_subtype']
-                        ]
-                    );
+                    $tokenid = $DB->get_field($tablename, 'id', $tokendata);
+                    $tokendata['token'] = $obj['token'];
+                    $tokendata['id'] = $tokenid;
+                    $DB->update_record($tablename, (object)$tokendata);
                 }
                 // TODO notify the user that the card has been saved or updated.
                 die("Token Saved: user id: $userid, user email: " . $obj['email']);
             }
         }
+        // If type is DELIVERY_STATUS this should notify the user about the delivery.
+        // In moodle, users pays for courses, but may be we can use it for selling books or somthing like that.
+        // TODO notify the users about deliver status just in case.
     } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         // This is the second callback from paymob, this is transaction response callback.
