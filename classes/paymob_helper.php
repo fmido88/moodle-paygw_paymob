@@ -40,6 +40,16 @@ class paymob_helper {
      */
     private $authtoken;
     /**
+     * The order id (not the local one) from paymob request.
+     * @var int
+     */
+    private $orderid;
+    /**
+     * The payment data from request_payment_key.
+     * @var \stdClass
+     */
+    private $paydata;
+    /**
      * The paymob host url at which we send requests.
      */
     const HOST = "https://accept.paymobsolutions.com/api/";
@@ -49,8 +59,10 @@ class paymob_helper {
      * @param string $apikey
      */
     public function __construct($apikey) {
-        $this->apikey = $apikey;
-        $this->authtoken = $this->request_token($apikey);
+        $this->apikey    = $apikey;
+        if (empty($this->authtoken)) {
+            $this->authtoken = $this->request_token($apikey);
+        }
     }
 
     /**
@@ -62,16 +74,16 @@ class paymob_helper {
     private function http_post($urlpath, $data = []) {
 
         $curl = curl_init();
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => self::HOST.$urlpath,
+        curl_setopt_array($curl, [
+            CURLOPT_URL            => self::HOST.$urlpath,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FAILONERROR => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($data),
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_FAILONERROR    => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($data),
+            CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
-            ),
-        ));
+            ],
+        ]);
 
         $response = curl_exec($curl);
         $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
@@ -118,16 +130,17 @@ class paymob_helper {
     public function request_order($fee, $currency, $orderitems = null) {
 
         $data = [
-            "auth_token" => $this->authtoken,
+            "auth_token"      => $this->authtoken,
             "delivery_needed" => "false",
-            "amount_cents" => ($fee),
-            "currency" => $currency,
-            "items" => $orderitems
+            "amount_cents"    => ($fee),
+            "currency"        => $currency,
+            "items"           => [$orderitems]
         ];
 
         $order = $this->http_post("ecommerce/orders", $data);
 
         if ($order && isset($order->id)) {
+            $this->orderid = $order->id;
             return $order->id;
         }
 
@@ -165,47 +178,47 @@ class paymob_helper {
             $userphone = 01000000000;
         }
 
-        if (!empty($USER->city)) {
-            $city = $USER->city;
-        } else {
-            $city = "NA";
-        }
+        $city = (!empty($USER->city)) ? $USER->city : "NA";
 
         $useremail = $USER->email;
 
         $billingdata = [
-            "apartment" => "NA",
-            "email" => $useremail,
-            "floor" => "NA",
-            "first_name" => $USER->firstname,
-            "street" => "NA",
-            "building" => "NA",
-            "phone_number" => $userphone,
+            "apartment"       => "NA",
+            "email"           => $useremail,
+            "floor"           => "NA",
+            "first_name"      => $USER->firstname,
+            "street"          => "NA",
+            "building"        => "NA",
+            "phone_number"    => $userphone,
             "shipping_method" => "NA",
-            "postal_code" => "NA",
-            "city" => $city,
-            "country" => $USER->country,
-            "last_name" => $USER->lastname,
-            "state" => "NA"
+            "postal_code"     => "NA",
+            "city"            => $city,
+            "country"         => $USER->country,
+            "last_name"       => $USER->lastname,
+            "state"           => "NA"
         ];
 
-        $orderitems = [[
-            "name" => $itemname,
+        $orderitems = [
+            "name"         => $itemname,
             "amount_cents" => ($fee),
-            "description" => "NA",
-            "quantity" => "1"
-        ]];
+            "description"  => "NA",
+            "quantity"     => "1"
+        ];
 
         $token = $this->authtoken;
-        $orderid = self::request_order($fee, $currency, $orderitems);
+        $orderid = (!empty($this->orderid)) ? $this->orderid : self::request_order($fee, $currency, $orderitems);
+        if (empty($orderid)) {
+            return false;
+        }
+
         $data = [
-            "auth_token" => $token,
-            "amount_cents" => ($fee),
-            "expiration" => 36000,
-            "order_id" => $orderid,
-            "billing_data" => $billingdata,
-            "currency" => $currency,
-            "integration_id" => $intid,
+            "auth_token"           => $token,
+            "amount_cents"         => ($fee),
+            "expiration"           => 36000,
+            "order_id"             => $orderid,
+            "billing_data"         => $billingdata,
+            "currency"             => $currency,
+            "integration_id"       => $intid,
             "lock_order_when_paid" => true
         ];
 
@@ -215,18 +228,19 @@ class paymob_helper {
 
         $payment = $this->http_post("acceptance/payment_keys", $data);
 
-        if ($payment && isset($payment->token)) {
+        if (!empty($payment) && isset($payment->token)) {
             $data = new \stdClass;
             $data->pm_orderid = $orderid;
-            $data->cost = $fee / 100;
-            $data->userid = $USER->id;
-            $data->username = $USER->username;
-            $data->intid = $intid;
+            $data->cost       = $fee / 100;
+            $data->userid     = $USER->id;
+            $data->username   = $USER->username;
+            $data->intid      = $intid;
             $DB->insert_record('paygw_paymob', $data);
 
             $return = new \stdClass;
-            $return->orderid = $orderid;
+            $return->orderid  = $orderid;
             $return->paytoken = $payment->token;
+            $this->paydata = $return;
             return $return;
         }
 
@@ -242,11 +256,14 @@ class paymob_helper {
      * @return \stdClass|bool
      */
     public function request_kiosk_id($itemname, $fee, $currency, $intid) {
-        $order = self::request_payment_key($itemname, $fee, $currency, $intid, false);
+        $order = !empty($this->paydata) ? $this->paydata : self::request_payment_key($itemname, $fee, $currency, $intid, false);
+        if (empty($order)) {
+            return false;
+        }
         $data = [
             "source" => [
                 "identifier" => "AGGREGATOR",
-                "subtype" => "AGGREGATOR"
+                "subtype"    => "AGGREGATOR"
             ],
             "payment_token" => $order->paytoken,
         ];
@@ -257,8 +274,8 @@ class paymob_helper {
             if (isset($request->pending) && $request->pending) {
                 if (isset($request->data->bill_reference)) {
                     $return = new \stdClass;
-                    $return->orderid = $request->order->id;
-                    $return->method = $request->source_data->type;
+                    $return->orderid   = $request->order->id;
+                    $return->method    = $request->source_data->type;
                     $return->reference = $request->data->bill_reference;
                     return $return;
                 }
@@ -278,11 +295,14 @@ class paymob_helper {
      * @return \stdClass|bool
      */
     public function request_wallet_url($phonenumber, $itemname, $fee, $currency, $intid) {
-        $order = self::request_payment_key($itemname, $fee, $currency, $intid, false);
+        $order = !empty($this->paydata) ? $this->paydata : self::request_payment_key($itemname, $fee, $currency, $intid, false);
+        if (empty($order)) {
+            return false;
+        }
         $data = [
             "source" => [
                 "identifier" => $phonenumber,
-                "subtype" => "WALLET",
+                "subtype"    => "WALLET",
             ],
             "payment_token" => $order->paytoken,
         ];
@@ -293,9 +313,9 @@ class paymob_helper {
             if (isset($request->redirect_url)) {
                 $return = new \stdClass;
                 $return->redirecturl = $request->redirect_url;
-                $return->iframeurl = $request->iframe_redirection_url;
-                $return->orderid = $request->order->id;
-                $return->method = $request->source_data->type;
+                $return->iframeurl   = $request->iframe_redirection_url;
+                $return->orderid     = $request->order->id;
+                $return->method      = $request->source_data->type;
                 return $return;
             }
         }

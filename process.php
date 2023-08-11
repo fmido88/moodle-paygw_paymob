@@ -29,44 +29,43 @@ require_once(__DIR__ . '/../../../config.php');
 require_login();
 global $DB, $USER;
 
-$delete = optional_param('delete', '', PARAM_INT);
-$component = required_param('component', PARAM_TEXT);
+$delete      = optional_param('delete', '', PARAM_INT);
+$component   = required_param('component', PARAM_TEXT);
 $paymentarea = required_param('paymentarea', PARAM_TEXT);
 $description = optional_param('description', '', PARAM_TEXT);
-$itemid = required_param('itemid', PARAM_INT);
+$itemid      = required_param('itemid', PARAM_INT);
 
 $returnbackurl = new moodle_url('/payment/gateway/paymob/method.php',
                                         [
-                                            'component' => $component,
+                                            'component'   => $component,
                                             'paymentarea' => $paymentarea,
                                             'description' => $description,
-                                            'itemid' => $itemid,
+                                            'itemid'      => $itemid,
                                         ]);
 
 // Check first if the user try to delete old card, and send back the required params.
-if ($delete) {
+if (!empty($delete)) {
     $DB->delete_records('paygw_paymob_cards_token', ['id' => $delete]);
 
     $msg = get_string('card_deleted', 'paygw_paymob');
     redirect($returnbackurl, $msg);
-    exit;
 }
 
 // Get the rest of params in case of payment process.
-$method = optional_param('method', '', PARAM_TEXT);
-$itemname = optional_param('itemname', '', PARAM_TEXT);
-$walletnumber = optional_param('phone-number', 0, PARAM_INT);
+$method         = optional_param('method', '', PARAM_TEXT);
+$itemname       = optional_param('itemname', '', PARAM_TEXT);
+$walletnumber   = optional_param('phone-number', 0, PARAM_INT);
 $savedcardtoken = optional_param('card_token', false, PARAM_RAW);
 
 $params = [
-    'component' => $component,
-    'paymentarea' => $paymentarea,
-    'description' => $description,
-    'itemid' => $itemid,
-    'method' => $method,
-    'itemname' => $itemname,
+    'component'    => $component,
+    'paymentarea'  => $paymentarea,
+    'description'  => $description,
+    'itemid'       => $itemid,
+    'method'       => $method,
+    'itemname'     => $itemname,
     'phone-number' => $walletnumber,
-    'card-token' => $savedcardtoken,
+    'card-token'   => $savedcardtoken,
 ];
 // Get all configuration perefernce.
 $config = (object) helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
@@ -86,6 +85,12 @@ if (
     // Apply the discount.
     $cost = $cost * (100 - $config->discount) / 100;
 }
+$data = new \stdClass;
+$data->component   = $component;
+$data->paymentarea = $paymentarea;
+$data->itemid      = $itemid;
+$data->method      = $method;
+$data->status      = 'requested';
 
 // Because the amount sent to paymob is in censts.
 $fee = $cost * 100;
@@ -93,58 +98,62 @@ $currency = $payable->get_currency();
 
 $apikey = $config->apikey;
 
-$helper = new paygw_paymob\paymob_helper($apikey);
+$helper = new paymob_helper($apikey);
+
+$error = get_string('somethingwrong', 'paygw_paymob');
 
 if ($method == 'wallet') {
     // Get the integration id of this payment method.
     $intid = $config->IntegrationIDwallet;
-
+    $data->intid       = $intid;
     // Requesting all data need to complete the payment using this method.
     $wallet = $helper->request_wallet_url($walletnumber, $description, $fee, $currency, $intid);
 
-    $orderid = $wallet->orderid;
+    if (empty($wallet)) {
+        redirect($returnbackurl, $error, null, 'error');
+    }
+
+    $orderid   = $wallet->orderid;
     $walleturl = $wallet->redirecturl;
     $iframeurl = $wallet->iframeurl;
-    $method = $wallet->method;
+    $method    = $wallet->method;
 
     $id = $DB->get_field('paygw_paymob', 'id', ['pm_orderid' => $orderid]);
-
-    $data = new \stdClass;
-    $data->id = $id;
-    $data->pm_orderid = $orderid;
-    $data->component = $component;
-    $data->paymentarea = $paymentarea;
-    $data->itemid = $itemid;
-    $data->intid = $intid;
+    $data->id     = $id;
+    $data->pm_orderid  = $orderid;
     $data->method = $method;
-    $data->status = 'requested';
-    // Updating the record so we can reuse it in the callback proccess.
+
+    // Updating the record so we can reuse it in the callback process.
     $DB->update_record('paygw_paymob', $data);
     // Redirect the user to the payment page.
-    redirect($walleturl);
-    exit;
+    if (!empty($walleturl)) {
+        redirect($walleturl);
+
+    } else if (!empty($iframeurl)) {
+        redirect($iframeurl);
+    } else {
+        redirect($returnbackurl, $error, null, 'error');;
+    }
+
 } else if ($method == 'kiosk') {
     // Get the integration id of this payment method.
     $intid = $config->IntegrationIDkiosk;
-
+    $data->intid       = $intid;
     // Requesting all data need to complete the payment using this method.
     $kiosk = $helper->request_kiosk_id($itemname, $fee, $currency, $intid);
-    $orderid = $kiosk->orderid;
+    if (empty($kiosk)) {
+        redirect($returnbackurl, $error, null, 'error');
+    }
+    $orderid   = $kiosk->orderid;
     $reference = $kiosk->reference;
-    $method = $kiosk->method;
+    $method    = $kiosk->method;
+    $data->pm_orderid  = $orderid;
 
     $id = $DB->get_field('paygw_paymob', 'id', ['pm_orderid' => $orderid]);
-
-    $data = new \stdClass;
-    $data->id = $id;
-    $data->pm_orderid = $orderid;
-    $data->component = $component;
-    $data->paymentarea = $paymentarea;
-    $data->itemid = $itemid;
-    $data->intid = $intid;
+    $data->id     = $id;
     $data->method = $method;
-    $data->status = 'requested';
-    // Updating the record so we can reuse it in the callback proccess.
+
+    // Updating the record so we can reuse it in the callback process.
     $DB->update_record('paygw_paymob', $data);
     // Set the context of the page.
     $PAGE->set_context(context_system::instance());
@@ -153,9 +162,8 @@ if ($method == 'wallet') {
     $PAGE->set_title(format_string('Reference key for aman or masary'));
     $PAGE->set_heading(format_string('Reference key for aman or masary'));
 
-    // Set the appropriate headers for the page.
     $PAGE->set_cacheable(false);
-    $PAGE->set_pagetype('popup');
+    $PAGE->set_pagelayout('frontpage');
     echo $OUTPUT->header();
 
     $templatedata = new stdClass;
@@ -165,30 +173,28 @@ if ($method == 'wallet') {
     echo $OUTPUT->render_from_template('paygw_paymob/process', $templatedata);
 
     echo $OUTPUT->footer();
+    exit;
 
 } else if ($method == 'card') {
     // Get the integration id of this payment method.
     $intid = $config->IntegrationIDcard;
+    $data->intid       = $intid;
     // Get the iframe id for card payments.
     $iframeid = $config->iframe_id;
 
     // Requesting all data need to complete the payment using this method.
     $request = $helper->request_payment_key($itemname, $fee, $currency, $intid, $savedcardtoken);
-    $token = $request->paytoken;
+    if (empty($request)) {
+        redirect($returnbackurl, $error, null, 'error');
+    }
+    $token   = $request->paytoken;
     $orderid = $request->orderid;
+    $data->pm_orderid  = $orderid;
 
     $id = $DB->get_field('paygw_paymob', 'id', ['pm_orderid' => $orderid]);
-
-    $data = new \stdClass;
     $data->id = $id;
-    $data->pm_orderid = $orderid;
-    $data->component = $component;
-    $data->paymentarea = $paymentarea;
-    $data->itemid = $itemid;
-    $data->intid = $intid;
-    $data->method = 'card';
-    $data->status = 'requested';
-    // Updating the record so we can reuse it in the callback proccess.
+
+    // Updating the record so we can reuse it in the callback process.
     $DB->update_record('paygw_paymob', $data);
     // Set the context of the page.
     $PAGE->set_context(context_system::instance());
@@ -197,9 +203,8 @@ if ($method == 'wallet') {
     $PAGE->set_title(format_string('Payment with bank card'));
     $PAGE->set_heading(format_string('Payment with bank card'));
 
-    // Set the appropriate headers for the page.
     $PAGE->set_cacheable(false);
-    $PAGE->set_pagetype('popup');
+    $PAGE->set_pagelayout('popup');
 
     echo $OUTPUT->header();
 
@@ -207,12 +212,13 @@ if ($method == 'wallet') {
     $iframe = 'https://accept.paymobsolutions.com/api/acceptance/iframes/'.$iframeid.'?payment_token='.$token;
 
     $templatedata = new stdClass;
-    $templatedata->iframeurl = $iframe;
+    $templatedata->iframeurl          = $iframe;
     $templatedata->show_accept_iframe = true;
 
     echo $OUTPUT->render_from_template('paygw_paymob/process', $templatedata);
 
     echo $OUTPUT->footer();
+    exit;
 
 } else {
     redirect($returnbackurl, get_string('invalidmethod', 'paygw_paymob'));

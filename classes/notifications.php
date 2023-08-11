@@ -56,17 +56,20 @@ class notifications {
 
         // Get the user object for messaging and fullname.
         $user = \core_user::get_user($userid);
+        if (empty($user) || isguestuser($user) || !empty($user->deleted)) {
+            return false;
+        }
 
         $userfullanme = fullname($user);
 
         // Set the object wiht all informations to notify the user.
         $a = (object)[
-            'fee' => $fee, // The original cost.
-            'cost' => $item->cost, // The cost after discounts.
+            'fee'      => $fee, // The original cost.
+            'cost'     => $item->cost, // The cost after discounts.
             'currency' => $payable->get_currency(),
-            'status' => $type,
-            'reason' => $reason, // The reason in case of declination.
-            'orderid' => $orderid,
+            'status'   => $type,
+            'reason'   => $reason, // The reason in case of declination.
+            'orderid'  => $orderid,
             'fullname' => $userfullanme,
         ];
 
@@ -84,13 +87,12 @@ class notifications {
                 $a->method = 'not defined';
         }
 
-        $user = \core_user::get_user($userid);
         $message = new \core\message\message();
         $message->component = 'paygw_paymob';
-        $message->name = 'payment_transaction'; // The notification name from message.php.
-        $message->userfrom = \core_user::get_noreply_user(); // If the message is 'from' a specific user you can set them here.
-        $message->userto = $user;
-        $message->subject = get_string('messagesubject', 'paygw_paymob', $type);
+        $message->name      = 'payment_transaction'; // The notification name from message.php.
+        $message->userfrom  = \core_user::get_noreply_user(); // If the message is 'from' a specific user you can set them here.
+        $message->userto    = $user;
+        $message->subject   = get_string('messagesubject', 'paygw_paymob', $type);
         switch ($type) {
             case 'success_processing':
                 $messagebody = get_string('message_success_processing', 'paygw_paymob', $a);
@@ -117,14 +119,14 @@ class notifications {
 
         $header = get_string('payment_notification', 'paygw_paymob');
 
-        $message->fullmessage = $messagebody;
+        $message->fullmessage       = $messagebody;
         $message->fullmessageformat = FORMAT_MARKDOWN;
-        $message->fullmessagehtml = "<p>$messagebody</p>";
-        $message->smallmessage = get_string('payment_attention', 'paygw_paymob', $type);
-        $message->notification = 1; // Because this is a notification generated from Moodle, not a user-to-user message.
-        $message->contexturl = ''; // A relevant URL for the notification.
-        $message->contexturlname = ''; // Link title explaining where users get to for the contexturl.
-        $content = array('*' => array('header' => $header, 'footer' => '')); // Extra content for specific processor.
+        $message->fullmessagehtml   = "<p>$messagebody</p>";
+        $message->smallmessage      = get_string('payment_attention', 'paygw_paymob', $type);
+        $message->notification      = 1; // Because this is a notification generated from Moodle, not a user-to-user message.
+        $message->contexturl        = ''; // A relevant URL for the notification.
+        $message->contexturlname    = ''; // Link title explaining where users get to for the contexturl.
+        $content = ['*' => ['header' => $header, 'footer' => '']]; // Extra content for specific processor.
         $message->set_additional_content('email', $content);
 
         // Actually send the message.
@@ -151,33 +153,37 @@ class notifications {
 
         $user = \core_user::get_user($userid);
 
+        if (empty($user) || isguestuser($user)) {
+            return false;
+        }
+
         $a = (object)[
-            'fee' => $fee, // Cost before discount.
-            'cost' => $item->cost, // Cost after discount.
-            'method' => $item->method,
-            'url' => $url,
+            'fee'      => $fee, // Cost before discount.
+            'cost'     => $item->cost, // Cost after discount.
+            'method'   => $item->method,
+            'url'      => $url,
             'fullname' => fullname($user),
         ];
 
         $message = new \core\message\message();
         $message->component = 'paygw_paymob';
-        $message->name = 'payment_receipt'; // The notification name from message.php.
-        $message->userfrom = \core_user::get_noreply_user(); // If the message is 'from' a specific user you can set them here.
-        $message->userto = $user;
-        $message->subject = get_string('messagesubject_receipt', 'paygw_paymob');
+        $message->name      = 'payment_receipt'; // The notification name from message.php.
+        $message->userfrom  = \core_user::get_noreply_user(); // If the message is 'from' a specific user you can set them here.
+        $message->userto    = $user;
+        $message->subject   = get_string('messagesubject_receipt', 'paygw_paymob');
 
         $messagebody = get_string('message_payment_receipt', 'paygw_paymob', $a);
 
         $header = get_string('payment_notification', 'paygw_paymob');
 
-        $message->fullmessage = $messagebody;
+        $message->fullmessage       = $messagebody;
         $message->fullmessageformat = FORMAT_MARKDOWN;
-        $message->fullmessagehtml = "<p>$messagebody</p>";
-        $message->smallmessage = get_string('payment_attention_receipt', 'paygw_paymob');
-        $message->notification = 1; // Because this is a notification generated from Moodle, not a user-to-user message.
-        $message->contexturl = $url; // A relevant URL for the notification.
-        $message->contexturlname = get_string('payment_receipt_url', 'paygw_paymob');
-        $content = array('*' => array('header' => $header, 'footer' => '')); // Extra content for specific processor.
+        $message->fullmessagehtml   = "<p>$messagebody</p>";
+        $message->smallmessage      = get_string('payment_attention_receipt', 'paygw_paymob');
+        $message->notification      = 1; // Because this is a notification generated from Moodle, not a user-to-user message.
+        $message->contexturl        = $url; // A relevant URL for the notification.
+        $message->contexturlname    = get_string('payment_receipt_url', 'paygw_paymob');
+        $content = ['*' => ['header' => $header, 'footer' => '']]; // Extra content for specific processor.
         $message->set_additional_content('email', $content);
 
         // Actually send the message.

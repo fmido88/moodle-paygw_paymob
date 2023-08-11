@@ -29,12 +29,19 @@ require_once(__DIR__ . '/../../../config.php');
 
 require_login();
 
-global $CFG, $USER, $PAGE, $OUTPUT, $DB;
+global $CFG, $USER, $DB;
 
-$component = required_param('component', PARAM_ALPHANUMEXT);
+$component   = required_param('component', PARAM_ALPHANUMEXT);
 $paymentarea = required_param('paymentarea', PARAM_ALPHANUMEXT);
-$itemid = required_param('itemid', PARAM_INT);
+$itemid      = required_param('itemid', PARAM_INT);
 $description = required_param('description', PARAM_TEXT);
+
+$params = [
+    'component'   => $component,
+    'paymentarea' => $paymentarea,
+    'itemid'      => $itemid,
+    'description' => $description,
+];
 
 $config = (object) helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
 
@@ -49,42 +56,39 @@ if (isset($config->discount)
 
     $cost = $cost * (100 - $config->discount) / 100;
 }
+
 $fee = $cost * 100; // Because paymob get the cost in cents.
 $currency = $payable->get_currency();
 
 $apikey = $config->apikey;
-$helper = new paygw_paymob\paymob_helper($apikey);
-
-$hascard = (!empty($config->IntegrationIDcard) && !empty($config->iframe_id));
-$haswallet = !empty($config->IntegrationIDwallet);
-$haskiosk = !empty($config->IntegrationIDkiosk);
-$itemname = $description;
+$helper = new paymob_helper($apikey);
 
 // Set the context of the page.
 $PAGE->set_context(context_system::instance());
 
-$PAGE->set_url('/payment/gateway/method.php', ['id' => $USER->id]);
+$PAGE->set_url('/payment/gateway/paymob/method.php', $params);
 $PAGE->set_title(format_string('Paying for '.$description));
 $PAGE->set_heading(format_string('Paying for '.$description));
 
 // Set the appropriate headers for the page.
 $PAGE->set_cacheable(false);
-$PAGE->set_pagetype('popup');
+$PAGE->set_pagelayout('frontpage');
+
 echo $OUTPUT->header();
 
 $templatedata = new stdClass;
-$templatedata->component = $component;
+$templatedata->component   = $component;
 $templatedata->paymentarea = $paymentarea;
-$templatedata->itemid = $itemid;
+$templatedata->itemid      = $itemid;
 $templatedata->description = $description;
-$templatedata->fee = $fee / 100;
-$templatedata->currency = $currency;
-$templatedata->itemname = $itemname;
-$templatedata->url = $CFG->wwwroot;
-$templatedata->saved = false;
-$templatedata->hascard = $hascard;
-$templatedata->haswallet = $haswallet;
-$templatedata->haskiosk = $haskiosk;
+$templatedata->fee         = $fee / 100;
+$templatedata->currency    = $currency;
+$templatedata->itemname    = $description;
+$templatedata->url         = $CFG->wwwroot;
+$templatedata->saved       = false;
+$templatedata->hascard     = (!empty($config->IntegrationIDcard) && !empty($config->iframe_id));
+$templatedata->haswallet   = !empty($config->IntegrationIDwallet);
+$templatedata->haskiosk    = !empty($config->IntegrationIDkiosk);
 
 $cards = $DB->get_records('paygw_paymob_cards_token', ['userid' => $USER->id]);
 $templatedata->validcurrency = ($currency == 'EGP') ? true : false;
@@ -101,6 +105,7 @@ if (!empty($cards)) {
     }
     $templatedata->savedcards = array_values($savedcards);
 }
+
 echo $OUTPUT->render_from_template('paygw_paymob/method', $templatedata);
 
 echo $OUTPUT->footer();

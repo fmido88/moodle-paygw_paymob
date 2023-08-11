@@ -46,40 +46,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = $jsondata['type'];
     if ($type === 'TRANSACTION') {
         // Decoding string.
-        $string['order'] = $string['order']['id'];
-        $string['is_3d_secure'] = ($string['is_3d_secure'] === true) ? 'true' : 'false';
-        $string['is_auth'] = ($string['is_auth'] === true) ? 'true' : 'false';
-        $string['is_capture'] = ($string['is_capture'] === true) ? 'true' : 'false';
-        $string['is_refunded'] = ($string['is_refunded'] === true) ? 'true' : 'false';
-        $string['is_standalone_payment'] = ($string['is_standalone_payment'] === true) ? 'true' : 'false';
-        $string['is_voided'] = ($string['is_voided'] === true) ? 'true' : 'false';
-        $string['success'] = ($string['success'] === true) ? 'true' : 'false';
-        $string['error_occured'] = ($string['error_occured'] === true) ? 'true' : 'false';
+        $string['order']                  = $string['order']['id'];
+        $string['is_3d_secure']           = ($string['is_3d_secure'] === true) ? 'true' : 'false';
+        $string['is_auth']                = ($string['is_auth'] === true) ? 'true' : 'false';
+        $string['is_capture']             = ($string['is_capture'] === true) ? 'true' : 'false';
+        $string['is_refunded']            = ($string['is_refunded'] === true) ? 'true' : 'false';
+        $string['is_standalone_payment']  = ($string['is_standalone_payment'] === true) ? 'true' : 'false';
+        $string['is_voided']              = ($string['is_voided'] === true) ? 'true' : 'false';
+        $string['success']                = ($string['success'] === true) ? 'true' : 'false';
+        $string['error_occured']          = ($string['error_occured'] === true) ? 'true' : 'false';
         $string['has_parent_transaction'] = ($string['has_parent_transaction'] === true) ? 'true' : 'false';
-        $string['pending'] = ($string['pending'] === true) ? 'true' : 'false';
-        $string['source_data_pan'] = $string['source_data']['pan'];
-        $string['source_data_type'] = $string['source_data']['type'];
-        $string['source_data_sub_type'] = $string['source_data']['sub_type'];
+        $string['pending']                = ($string['pending'] === true) ? 'true' : 'false';
+        $string['source_data_pan']        = $string['source_data']['pan'];
+        $string['source_data_type']       = $string['source_data']['type'];
+        $string['source_data_sub_type']   = $string['source_data']['sub_type'];
+
         $orderid = $string['order'];
+
     } else if ($type === 'DELIVERY_STATUS') {
         $string['order'] = $string['order']['id'];
+
         $orderid = $string['order'];
+
     } else if ($type === 'TOKEN') {
         $orderid = $obj['order_id'];
     }
+
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // This is a client side not server side, so let's make sure that the user is logged in.
     require_login();
     // Get all the data we need from the request.
     $obj = [
-        'success' => optional_param('success', '', PARAM_RAW),
-        'is_voided' => optional_param('is_voided', '', PARAM_RAW),
-        'is_refunded' => optional_param('is_refunded', '', PARAM_RAW),
-        'pending' => optional_param('pending', '', PARAM_RAW),
-        'is_void' => optional_param('is_void', '', PARAM_RAW),
-        'is_refund' => optional_param('is_refund', '', PARAM_RAW),
+        'success'       => optional_param('success', '', PARAM_RAW),
+        'is_voided'     => optional_param('is_voided', '', PARAM_RAW),
+        'is_refunded'   => optional_param('is_refunded', '', PARAM_RAW),
+        'pending'       => optional_param('pending', '', PARAM_RAW),
+        'is_void'       => optional_param('is_void', '', PARAM_RAW),
+        'is_refund'     => optional_param('is_refund', '', PARAM_RAW),
         'error_occured' => optional_param('error_occured', '', PARAM_RAW),
-        'data_message' => optional_param('data_message', '', PARAM_RAW),
+        'data_message'  => optional_param('data_message', '', PARAM_RAW),
     ];
 
     // We only need this here for checking the security hmac.
@@ -95,19 +100,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Check the hmac code from request.
 $hmac = optional_param('hmac', '', PARAM_TEXT);
 
-// Get the required data for completing the payment from the databasetable.
+// Get the required data for completing the payment from the database table.
 $item = $DB->get_record('paygw_paymob', ['pm_orderid' => $orderid]);
-$component = $item->component;
+$component   = $item->component;
 $paymentarea = $item->paymentarea;
-$itemid = $item->itemid;
-$userid = $item->userid;
-$id = $item->id;
-$cost = $item->cost;
+$itemid      = $item->itemid;
+$userid      = $item->userid;
+$id          = $item->id;
+$cost        = $item->cost;
 
 // Use the api key and the hmac-secret from the configuration.
 $config = (object)core_payment\helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
 $hmacsecret = $config->hmac_secret;
-$apikey = $config->apikey;
+$apikey     = $config->apikey;
 
 $payable = helper::get_payable($component, $paymentarea, $itemid);
 // Reset the cost before discount.
@@ -133,8 +138,8 @@ $helper = new paygw_paymob\paymob_helper($apikey);
 // Calculate the security hash.
 $hash = $helper->hash($hmacsecret, $string, $type);
 
-// Inisialize the data to be updated in the database.
-$update = new \stdClass;
+// Initialize the data to be updated in the database.
+$update = (object)[];
 $update->id = $id;
 $update->status = 'requested';
 
@@ -244,9 +249,9 @@ if ($hash === $hmac) {
             if ($user && $userid == $user->id) {
                 // Check if this card already exists.
                 $tokendata = [
-                    'user_id' => $userid,
+                    'user_id'      => $userid,
                     'card_subtype' => $obj['card_subtype'],
-                    'masked_pan' => $obj['masked_pan'],
+                    'masked_pan'   => $obj['masked_pan'],
                 ];
                 $token = $DB->get_record($tablename, $tokendata);
 
@@ -258,7 +263,7 @@ if ($hash === $hmac) {
                 } else { // Exists? update the data.
                     $tokenid = $DB->get_field($tablename, 'id', $tokendata);
                     $tokendata['token'] = $obj['token'];
-                    $tokendata['id'] = $tokenid;
+                    $tokendata['id']    = $tokenid;
                     $DB->update_record($tablename, (object)$tokendata);
                 }
                 // TODO notify the user that the card has been saved or updated.
@@ -269,7 +274,6 @@ if ($hash === $hmac) {
         // In moodle, users pays for courses, but may be we can use it for selling books or somthing like that.
         // TODO notify the users about deliver status just in case.
     } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
         // This is the second callback from paymob, this is transaction response callback.
         // When the transaction is success, there is two ways that paymob send the response.
         // First that success is true.
@@ -288,8 +292,7 @@ if ($hash === $hmac) {
 
             // Check the actual status from the transaction proccess callback.
             $status = $DB->get_field('paygw_paymob', 'status', ['id' => $id], IGNORE_MISSING);
-            redirect($url, get_string('paymentresponse', 'paygw_paymob', $status), 0, 'success');
-            exit;
+            redirect($url, get_string('paymentresponse', 'paygw_paymob', $status), null, 'success');
         } else { // Otherwise the transaction is declined.
             $update->status = 'Declined';
             $DB->update_record('paygw_paymob', $update);
@@ -299,13 +302,18 @@ if ($hash === $hmac) {
             } else {
                 $a = $obj['data_message'];
             }
+            $params = [
+                'component'   => $component,
+                'itemid'      => $itemid,
+                'paymentarea' => $paymentarea,
+                'description' => '',
+            ];
             // Notify user with the reason of declination if it is set.
             notifications::notify($userid, $cost, $orderid, 'declined', $a);
-            redirect(new moodle_url('/'), get_string('paymentcancelled', 'paygw_paymob', $a));
-            exit;
+            redirect(new moodle_url('/payment/gateway/paymob/method.php', $params),
+                        get_string('paymentcancelled', 'paygw_paymob', $a), null, 'error');
         }
     }
 } else {
     die("This Server is busy try again later!");
 }
-exit;

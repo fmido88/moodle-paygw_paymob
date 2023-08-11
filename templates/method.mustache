@@ -53,7 +53,7 @@
     }
 
 }}
-<form id="paymob-method-select" action="{{globals.config.wwwroot}}/payment/gateway/paymob/process.php" class="paymob-form" method="post">
+<form id="paymob-method-select" action="{{{url}}}/payment/gateway/paymob/process.php" class="paymob-form" method="post">
     <div class="cost-display">
         <div style="text-align: center;">
             <p>{{# str }} abouttopay, paygw_paymob {{/ str}} {{{description}}}</p>
@@ -64,9 +64,8 @@
     <div class="form-group">
         <label for="payment-type" class="h3">{{# str }} paymentmethods, paygw_paymob {{/ str}}</label>
         <div class="paymob-image-palce-holder">
-            <img src="{{globals.config.wwwroot}}/payment/gateway/paymob/img/visa_mastercard.png" class="paymob-payment-method-image" alt="visa_mastercard"/>
         </div>
-        <select class="form-control" id="payment-type" name="method">
+        <select class="form-control" id="payment-type" name="method" onchange="extraData(), changeImage()">
             {{#hascard}}
             <option value="card" selected>{{# str }} method_card, paygw_paymob {{/ str}}</option>
             {{/hascard}}
@@ -115,40 +114,43 @@
 </form>
 
 <script>
-    const phoneNumberInput = document.getElementById('phone-number');
-    const phoneGroup = document.getElementById('phone-group');
-    const paymentTypeSelect = document.getElementById('payment-type');
-    const savedCardsGroup = document.getElementById('saved-cards-group');
+    extraData();
+    changeImage();
 
-    paymentTypeSelect.addEventListener('change', () => {
-    if (paymentTypeSelect.value === 'wallet') {
-        phoneGroup.style.display = 'block';
-        savedCardsGroup.style.display = 'none';
-    } else if (paymentTypeSelect.value === 'card'){
-        phoneGroup.style.display = 'none';
-        phoneNumberInput.value = '';
-        savedCardsGroup.style.display = 'block';
-    } else {
-        phoneGroup.style.display = 'none';
-        phoneNumberInput.value = '';
-        savedCardsGroup.style.display = 'none';
+    function extraData() {
+        const phoneNumberInput = document.getElementById('phone-number');
+        const phoneGroup = document.getElementById('phone-group');
+        const paymentTypeSelect = document.getElementById('payment-type');
+        const savedCardsGroup = document.getElementById('saved-cards-group');
+        if (paymentTypeSelect.value === 'wallet') {
+            phoneGroup.style.display = 'block';
+            savedCardsGroup.style.display = 'none';
+        } else if (paymentTypeSelect.value === 'card'){
+            phoneGroup.style.display = 'none';
+            phoneNumberInput.value = '';
+            savedCardsGroup.style.display = 'block';
+        } else {
+            phoneGroup.style.display = 'none';
+            phoneNumberInput.value = '';
+            savedCardsGroup.style.display = 'none';
+        }
     }
-    });
-    // get references to the necessary elements
-    const imagePlaceholder = document.querySelector('.paymob-image-palce-holder');
-    // define a mapping of payment method values to image URLs
-    const imageUrls = {
-        card: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/visa_mastercard.png',
-        kiosk: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/aman.png',
-        wallet: '{{globals.config.wwwroot}}/payment/gateway/paymob/img/Wallets.png'
-    };
-    const imageAlts = {
-        card: 'visa_mastercard',
-        kiosk: 'aman',
-        wallet: 'Wallets'
-    };
-    // listen for changes to the payment method select element
-    paymentTypeSelect.addEventListener('change', () => {
+
+    function changeImage() {
+        const paymentTypeSelect = document.getElementById('payment-type');
+        // get references to the necessary elements
+        const imagePlaceholder = document.querySelector('.paymob-image-palce-holder');
+        // define a mapping of payment method values to image URLs
+        const imageUrls = {
+            card: '{{{url}}}/payment/gateway/paymob/img/visa_mastercard.png',
+            kiosk: '{{{url}}}/payment/gateway/paymob/img/aman.png',
+            wallet: '{{{url}}}/payment/gateway/paymob/img/Wallets.png'
+        };
+        const imageAlts = {
+            card: 'visa_mastercard',
+            kiosk: 'aman',
+            wallet: 'Wallets'
+        };
         // get the selected payment method value
         const selectedValue = paymentTypeSelect.value;
 
@@ -162,5 +164,6 @@
 
         // append the new image to the image placeholder
         imagePlaceholder.appendChild(imageElement);
-    });
+    }
+
 </script>
