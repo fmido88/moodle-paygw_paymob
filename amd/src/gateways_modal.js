@@ -21,24 +21,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import Templates from 'core/templates';
-import ModalFactory from 'core/modal_factory';
-
-const showModalWithPlaceholder = async() => {
-    const modal = await ModalFactory.create({
-        body: await Templates.render('paygw_paymob/paymob_button_placeholder', {})
-    });
-    modal.show();
-};
-
 export const process = (component, paymentArea, itemId, description) => {
-    return showModalWithPlaceholder()
-        .then(() => {
+    return () => {
             location.href = M.cfg.wwwroot + '/payment/gateway/paymob/method.php?' +
                 'component=' + component +
                 '&paymentarea=' + paymentArea +
                 '&itemid=' + itemId +
                 '&description=' + description;
-            return new Promise(() => null);
-        });
+            return;
+        };
 };
