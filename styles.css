@@ -1,37 +1,37 @@
-.paymob-image-place-holder {
+.path-payment-gateway-paymob .paymob-image-place-holder {
     height: max-content;
     max-width: 100%;
     text-align: center;
     padding-bottom: 5px;
 }
 
-.paymob-payment-method-image {
+.path-payment-gateway-paymob .paymob-payment-method-image {
     max-width: 100%;
     max-height: 80px;
     min-height: 80px;
 }
 
-#accepting-container div {
+.path-payment-gateway-paymob #accepting-container div {
     text-align: center;
 }
-#accepting-container {
+.path-payment-gateway-paymob #accepting-container {
     width: 100%;
     margin: 0.2rem auto;
     min-width: 300px;
     min-height: 80vh;
 }
-#accepting-container .accept_error h1 {
+.path-payment-gateway-paymob #accepting-container .accept_error h1 {
     color: #e91e63;
 }
-#accepting-container .accept_iframe iframe {
+.path-payment-gateway-paymob #accepting-container .accept_iframe iframe {
     border: none;
     width: 100%;
     min-height: 80vh;
 }
-#accepting-container .accept_kiosk h1 {
+.path-payment-gateway-paymob #accepting-container .accept_kiosk h1 {
     padding: 0;
     color: #4caf50;
 }
-#accepting-container .accept_kiosk p {
+.path-payment-gateway-paymob #accepting-container .accept_kiosk p {
     color: #03a9f4;
 }
