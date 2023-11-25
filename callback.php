@@ -30,7 +30,8 @@ use paygw_paymob\paymob_helper;
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 global $DB;
-
+$requestmethod = $_SERVER['REQUEST_METHOD'];
+error_log("request method: $requestmethod"."\n", 3, 'callback.log');
 // Paymob do two kinds of callbacks.
 // First one transaction processed callback
 // is in request method POST and it is in json format.
@@ -74,22 +75,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // This is a client side not server side, so let's make sure that the user is logged in.
-    require_login();
+    require_login(null, false);
     // Get all the data we need from the request.
     $obj = [
-        'success'       => optional_param('success', '', PARAM_RAW),
-        'is_voided'     => optional_param('is_voided', '', PARAM_RAW),
-        'is_refunded'   => optional_param('is_refunded', '', PARAM_RAW),
-        'pending'       => optional_param('pending', '', PARAM_RAW),
-        'is_void'       => optional_param('is_void', '', PARAM_RAW),
-        'is_refund'     => optional_param('is_refund', '', PARAM_RAW),
-        'error_occured' => optional_param('error_occured', '', PARAM_RAW),
-        'data_message'  => optional_param('data_message', '', PARAM_RAW),
+        'success'       => optional_param('success', '', PARAM_TEXT),
+        'is_voided'     => optional_param('is_voided', '', PARAM_TEXT),
+        'is_refunded'   => optional_param('is_refunded', '', PARAM_TEXT),
+        'pending'       => optional_param('pending', '', PARAM_TEXT),
+        'is_void'       => optional_param('is_void', '', PARAM_TEXT),
+        'is_refund'     => optional_param('is_refund', '', PARAM_TEXT),
+        'error_occured' => optional_param('error_occured', '', PARAM_TEXT),
+        'data_message'  => optional_param('data_message', '', PARAM_TEXT),
     ];
 
     // We only need this here for checking the security hmac.
     // So we must use the variable $_GET as it is.
-    $string = $_GET;
+    $string = [];
+    foreach ($_GET as $k => $v) {
+        $string[$k] = clean_param($v, PARAM_TEXT);
+    }
 
     $type = 'TRANSACTION';
     $orderid = required_param('order', PARAM_INT);
@@ -107,7 +111,6 @@ $paymentarea = $item->paymentarea;
 $itemid      = $item->itemid;
 $userid      = $item->userid;
 $id          = $item->id;
-$cost        = $item->cost;
 
 // Use the api key and the hmac-secret from the configuration.
 $config = (object)core_payment\helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
@@ -115,6 +118,10 @@ $hmacsecret = $config->hmac_secret;
 $apikey     = $config->apikey;
 
 $payable = helper::get_payable($component, $paymentarea, $itemid);
+$cost = $payable->get_amount();
+
+error_log("Cost: $cost, Item: ".json_encode((array)$item)."\n", 3, 'callback.log');
+
 // Reset the cost before discount.
 if (isset($config->discount) && $config->discount > 0 && isset($config->discountcondition) && $cost >= $config->discountcondition) {
     $cost = $cost * 100 / (100 - $config->discount);
@@ -159,7 +166,7 @@ if ($hash === $hmac) {
                 $obj['is_refund'] === false &&
                 $obj['error_occured'] === false
             ) {
-
+                error_log("success: true, Item: ".json_encode((array)$item)."\n", 3, 'callback.log');
                 $paymentid = helper::save_payment($payable->get_account_id(),
                                 $component,
                                 $paymentarea,
@@ -169,6 +176,7 @@ if ($hash === $hmac) {
                                 $payable->get_currency(),
                                 'paymob'
                             );
+                error_log("Payment Id: $paymentid"."\n", 3, 'callback.log');
                 $update->status = 'success';
                 $update->paymentid = $paymentid;
                 $DB->update_record('paygw_paymob', $update);
