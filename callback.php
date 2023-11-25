@@ -31,7 +31,6 @@ require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 global $DB;
 $requestmethod = $_SERVER['REQUEST_METHOD'];
-error_log("request method: $requestmethod"."\n", 3, 'callback.log');
 // Paymob do two kinds of callbacks.
 // First one transaction processed callback
 // is in request method POST and it is in json format.
@@ -120,8 +119,6 @@ $apikey     = $config->apikey;
 $payable = helper::get_payable($component, $paymentarea, $itemid);
 $cost = $payable->get_amount();
 
-error_log("Cost: $cost, Item: ".json_encode((array)$item)."\n", 3, 'callback.log');
-
 // Reset the cost before discount.
 if (isset($config->discount) && $config->discount > 0 && isset($config->discountcondition) && $cost >= $config->discountcondition) {
     $cost = $cost * 100 / (100 - $config->discount);
@@ -166,7 +163,6 @@ if ($hash === $hmac) {
                 $obj['is_refund'] === false &&
                 $obj['error_occured'] === false
             ) {
-                error_log("success: true, Item: ".json_encode((array)$item)."\n", 3, 'callback.log');
                 $paymentid = helper::save_payment($payable->get_account_id(),
                                 $component,
                                 $paymentarea,
@@ -176,7 +172,6 @@ if ($hash === $hmac) {
                                 $payable->get_currency(),
                                 'paymob'
                             );
-                error_log("Payment Id: $paymentid"."\n", 3, 'callback.log');
                 $update->status = 'success';
                 $update->paymentid = $paymentid;
                 $DB->update_record('paygw_paymob', $update);
