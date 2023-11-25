@@ -108,7 +108,7 @@ class paymob_helper {
      */
     public function request_token($apikey) {
         $data = [
-            'api_key' => $apikey
+            'api_key' => $apikey,
         ];
 
         $request = self::http_post('auth/tokens', $data);
@@ -137,7 +137,7 @@ class paymob_helper {
             "delivery_needed" => "false",
             "amount_cents"    => ($fee),
             "currency"        => $currency,
-            "items"           => [$orderitems]
+            "items"           => [$orderitems],
         ];
 
         $order = $this->http_post("ecommerce/orders", $data);
@@ -198,14 +198,14 @@ class paymob_helper {
             "city"            => $city,
             "country"         => $USER->country,
             "last_name"       => $USER->lastname,
-            "state"           => "NA"
+            "state"           => "NA",
         ];
 
         $orderitems = [
             "name"         => $itemname,
             "amount_cents" => ($fee),
             "description"  => "NA",
-            "quantity"     => "1"
+            "quantity"     => "1",
         ];
 
         $token = $this->authtoken;
@@ -222,7 +222,7 @@ class paymob_helper {
             "billing_data"         => $billingdata,
             "currency"             => $currency,
             "integration_id"       => $intid,
-            "lock_order_when_paid" => true
+            "lock_order_when_paid" => true,
         ];
 
         if ($savedcard) {
@@ -266,7 +266,7 @@ class paymob_helper {
         $data = [
             "source" => [
                 "identifier" => "AGGREGATOR",
-                "subtype"    => "AGGREGATOR"
+                "subtype"    => "AGGREGATOR",
             ],
             "payment_token" => $order->paytoken,
         ];

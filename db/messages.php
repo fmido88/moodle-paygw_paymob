@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$messageproviders = array(
-    'payment_transaction' => array(),
-    'payment_receipt' => array(),
-);
+$messageproviders = [
+    'payment_transaction' => [],
+    'payment_receipt'     => [],
+];
