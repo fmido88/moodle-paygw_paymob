@@ -83,10 +83,14 @@ class gateway extends \core_payment\gateway {
         $mform->setType('discountcondition', PARAM_INT);
         $mform->addHelpButton('discountcondition', 'discountcondition', 'paygw_paymob');
 
+        $mform->addElement('text', 'minimum_allowed', get_string('minimum_allowed', 'paygw_paymob'));
+        $mform->setType('minimum_allowed', PARAM_FLOAT);
+        $mform->addHelpButton('minimum_allowed', 'minimum_allowed', 'paygw_paymob');
+
         global $CFG;
-        $mform->addElement('html', '<span class="lable-callback">'.get_string('callback', 'paygw_paymob').':</span><br>');
+        $mform->addElement('html', '<span class="label-callback">'.get_string('callback', 'paygw_paymob').':</span><br>');
         $mform->addElement('html', '<span class="callback_url">'.$CFG->wwwroot.'/payment/gateway/paymob/callback.php</span><br>');
-        $mform->addElement('html', '<span class="lable-callback">'.get_string('callback_help', 'paygw_paymob').'</span>');
+        $mform->addElement('html', '<span class="label-callback">'.get_string('callback_help', 'paygw_paymob').'</span>');
     }
 
     /**
@@ -99,16 +103,32 @@ class gateway extends \core_payment\gateway {
      */
     public static function validate_gateway_form(\core_payment\form\account_gateway $form,
                                                  \stdClass $data, array $files, array &$errors): void {
-        if ($data->enabled &&
-                (empty($data->apikey)
-                || (
-                    (empty($data->IntegrationIDcard) || empty($data->iframe_id))
-                    && empty($data->IntegrationIDwallet
-                    && empty($data->IntegrationIDkiosk))
-                    )
-                )
-            ) {
-            $errors['enabled'] = get_string('gatewaycannotbeenabled', 'payment');
+        $ok = true;
+        if ($data->enabled) {
+            if (empty($data->apikey)) {
+                $errors['apikey'] = get_string('apikey_missing');
+                $ok = false;
+            }
+            if (empty($data->hmac_secret)) {
+                $errors['hmac_secret'] = get_string('hmac_secret_missing', 'paygw_paymob');
+                $ok = false;
+            }
+            if ((empty($data->IntegrationIDcard) || empty($data->iframe_id))
+                && empty($data->IntegrationIDwallet
+                && empty($data->IntegrationIDkiosk))
+                ) {
+                $errors['IntegrationIDcard'] =
+                $errors['iframe_id'] =
+                $errors['IntegrationIDwallet'] =
+                $errors['IntegrationIDkiosk'] = get_string('atleast_one_integration', 'paygw_paymob');
+                $ok = false;
+            }
+            if (!empty($data->discount) && $data->discount >= 100) {
+                $errors['discount'] = get_string('invalid_discount', 'paygw_paymob');
+            }
+            if (!$ok) {
+                $errors['enabled'] = get_string('gatewaycannotbeenabled', 'payment');
+            }
         }
     }
 }

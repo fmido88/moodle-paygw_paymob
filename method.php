@@ -47,8 +47,11 @@ $config = (object) helper::get_gateway_configuration($component, $paymentarea, $
 
 $payable = helper::get_payable($component, $paymentarea, $itemid);// Get currency and payment amount.
 $surcharge = helper::get_gateway_surcharge('paymob');// In case user uses surcharge.
+
+$currency = $payable->get_currency();
+$cost = helper::get_rounded_cost($payable->get_amount(), $currency, $surcharge);
+
 // Adding discount condition.
-$cost = helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge);
 if (isset($config->discount)
     && $config->discount > 0 &&
     isset($config->discountcondition) &&
@@ -57,11 +60,7 @@ if (isset($config->discount)
     $cost = $cost * (100 - $config->discount) / 100;
 }
 
-$fee = $cost * 100; // Because paymob get the cost in cents.
-$currency = $payable->get_currency();
-
-$apikey = $config->apikey;
-$helper = new paymob_helper($apikey);
+$min = $config->minimum_allowed ?? 0;
 
 // Set the context of the page.
 $PAGE->set_context(context_system::instance());
@@ -76,36 +75,44 @@ $PAGE->set_pagelayout('frontpage');
 
 echo $OUTPUT->header();
 
-$templatedata = new stdClass;
-$templatedata->component   = $component;
-$templatedata->paymentarea = $paymentarea;
-$templatedata->itemid      = $itemid;
-$templatedata->description = $description;
-$templatedata->fee         = $fee / 100;
-$templatedata->currency    = $currency;
-$templatedata->itemname    = $description;
-$templatedata->url         = $CFG->wwwroot;
-$templatedata->saved       = false;
-$templatedata->hascard     = (!empty($config->IntegrationIDcard) && !empty($config->iframe_id));
-$templatedata->haswallet   = !empty($config->IntegrationIDwallet);
-$templatedata->haskiosk    = !empty($config->IntegrationIDkiosk);
+if ($cost >= (float)$min) {
 
-$cards = $DB->get_records('paygw_paymob_cards_token', ['userid' => $USER->id]);
-$templatedata->validcurrency = ($currency == 'EGP') ? true : false;
+    $apikey = $config->apikey;
+    $helper = new paymob_helper($apikey);
 
-if (!empty($cards)) {
-    $templatedata->saved = true;
-    $templatedata->savedcardsnotify = get_string('savedcardsnotify', 'paygw_paymob', fullname($USER));
-    $savedcards = [];
-    foreach ($cards as $key => $card) {
-        $savedcards['card_'.$key] = new stdClass;
-        foreach ($card as $c => $i) {
-            $savedcards['card_'.$key]->$c = $i;
+    $templatedata = new stdClass;
+    $templatedata->component   = $component;
+    $templatedata->paymentarea = $paymentarea;
+    $templatedata->itemid      = $itemid;
+    $templatedata->description = $description;
+    $templatedata->fee         = $cost;
+    $templatedata->currency    = $currency;
+    $templatedata->itemname    = $description;
+    $templatedata->url         = $CFG->wwwroot;
+    $templatedata->saved       = false;
+    $templatedata->hascard     = (!empty($config->IntegrationIDcard) && !empty($config->iframe_id));
+    $templatedata->haswallet   = !empty($config->IntegrationIDwallet);
+    $templatedata->haskiosk    = !empty($config->IntegrationIDkiosk);
+    
+    $cards = $DB->get_records('paygw_paymob_cards_token', ['userid' => $USER->id]);
+    $templatedata->validcurrency = ($currency == 'EGP');
+    
+    if (!empty($cards)) {
+        $templatedata->saved = true;
+        $templatedata->savedcardsnotify = get_string('savedcardsnotify', 'paygw_paymob', fullname($USER));
+        $savedcards = [];
+        foreach ($cards as $key => $card) {
+            $savedcards['card_'.$key] = new stdClass;
+            foreach ($card as $c => $i) {
+                $savedcards['card_'.$key]->$c = $i;
+            }
         }
+        $templatedata->savedcards = array_values($savedcards);
     }
-    $templatedata->savedcards = array_values($savedcards);
+    
+    echo $OUTPUT->render_from_template('paygw_paymob/method', $templatedata);
+} else {
+    notice(get_string('low_payment', 'paygw_paymob', $min));
 }
-
-echo $OUTPUT->render_from_template('paygw_paymob/method', $templatedata);
 
 echo $OUTPUT->footer();

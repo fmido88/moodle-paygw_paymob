@@ -61,9 +61,10 @@
             <p>{{# str }} choosemethod, paygw_paymob {{/ str}}</p>
         </div>
     </div>
+
     <div class="form-group">
         <label for="payment-type" class="h3">{{# str }} paymentmethods, paygw_paymob {{/ str}}</label>
-        <div class="paymob-image-palce-holder">
+        <div class="paymob-image-place-holder">
         </div>
         <select class="form-control" id="payment-type" name="method" onchange="extraData(), changeImage()">
             {{#hascard}}
@@ -139,7 +140,7 @@
     function changeImage() {
         const paymentTypeSelect = document.getElementById('payment-type');
         // get references to the necessary elements
-        const imagePlaceholder = document.querySelector('.paymob-image-palce-holder');
+        const imagePlaceholder = document.querySelector('.paymob-image-place-holder');
         // define a mapping of payment method values to image URLs
         const imageUrls = {
             card: '{{{url}}}/payment/gateway/paymob/img/visa_mastercard.png',

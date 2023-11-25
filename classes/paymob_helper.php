@@ -168,10 +168,10 @@ class paymob_helper {
             $userphone = $USER->phone2;
         } else {
             // Get the ID of the custom profile field for phone number.
-            $phonefieldid = $DB->get_field('user_info_field', 'id', array('shortname' => 'phone'));
+            $phonefieldid = $DB->get_field('user_info_field', 'id', ['shortname' => 'phone']);
 
             // Get the phone number from the user_info_data table using the field ID and user ID.
-            $userphone = $DB->get_field('user_info_data', 'data', array('userid' => $USER->id, 'fieldid' => $phonefieldid));
+            $userphone = $DB->get_field('user_info_data', 'data', ['userid' => $USER->id, 'fieldid' => $phonefieldid]);
         }
 
         if (empty($userphone)) {
