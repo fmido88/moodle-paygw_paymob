@@ -72,29 +72,32 @@ class paymob_helper {
      * @return object|string object of returned data or string on error.
      */
     private function http_post($urlpath, $data = []) {
+        global $CFG;
+        require_once($CFG->libdir."/filelib.php");
+        $curl = new \curl();
 
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL            => self::HOST.$urlpath,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FAILONERROR    => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => json_encode($data),
-            CURLOPT_HTTPHEADER     => [
+        $options = [
+            'url'            => self::HOST.$urlpath,
+            'returntransfer' => true,
+            'failonerror'    => true,
+            'post'           => true,
+            'postfields'     => json_encode($data),
+            'httpheader'     => [
                 'Content-Type: application/json',
             ],
-        ]);
+        ];
+        $curl->setopt($options);
 
-        $response = curl_exec($curl);
-        $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $response = $curl->post(self::HOST.$urlpath, json_encode($data), $options);
+        $httpcode = $curl->get_info()['http_code'] ?? 0;
         $responserawdata = json_decode($response, false);
 
+        $curl->cleanopt();
         if ($httpcode != 200 && $httpcode != 201 ) {
             // Endpoint returned an error.
-            return "endpoint return error";
+            return "endpoint return error ".$response;
         }
 
-        curl_close($curl);
         return $responserawdata;
     }
 
