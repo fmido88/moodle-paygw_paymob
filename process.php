@@ -72,7 +72,7 @@ $config = (object) helper::get_gateway_configuration($component, $paymentarea, $
 
 $payable = helper::get_payable($component, $paymentarea, $itemid);// Get currency and payment amount.
 $surcharge = helper::get_gateway_surcharge('paymob');// In case user uses surcharge.
-
+$successurl = helper::get_success_url($component, $paymentarea, $itemid);
 $cost = helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge);
 
 // Check if there is enabled discounts and this payment within the conditions.
@@ -170,6 +170,10 @@ if ($method == 'wallet') {
     $templatedata = new stdClass;
     $templatedata->ref = $reference;
     $templatedata->show_accept_iframe = false;
+
+    $continuelabel = get_string('success_continue', 'paygw_paymob');
+
+    $templatedata->continue = $OUTPUT->single_button($successurl, $continuelabel);
 
     echo $OUTPUT->render_from_template('paygw_paymob/process', $templatedata);
 

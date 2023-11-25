@@ -91,3 +91,5 @@ $string['privacy:metadata:paygw_paymob:country'] = 'User\'s country will be sent
 $string['privacy:metadata:paygw_paymob:city'] = 'User\'s city will be sent to Paymob upon any transactions.';
 $string['privacy:metadata:paygw_paymob:phone'] = 'User\'s phone number will be sent to Paymob upon any transactions, this should be a valid number or it will return an error.';
 $string['privacy:metadata:paygw_paymob:email'] = 'User\'s email will be sent to Paymob upon any transactions, and it should be a valid email.';
+
+$string['success_continue'] = 'After making sure of successful payment.. Click here.';

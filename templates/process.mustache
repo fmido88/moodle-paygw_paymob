@@ -21,12 +21,14 @@
     * show_accept_iframe - showing or hiding iframe according to payment method.
     * iframeurl - the url of iframe
     * ref - the reference code for payment in kiosk method
+    * continue - single button
 
     Example context (json):
     {
         "show_accept_iframe": false,
         "iframeurl": "https://example.com",
-        "ref": "123456"
+        "ref": "123456",
+        "continue": "something"
     }
 
 }}
@@ -41,8 +43,8 @@
         <div class="accept_kiosk">
             <h2>{{# str }} kiosk_bill_reference, paygw_paymob {{/ str }}</h2>
             <h1 id="accept_kiosk_id">{{{ref}}}</h1>
-            <p>{{# str }} kiosk_process_help_en, paygw_paymob {{/ str }}</p>
-            <p> {{# str }} kiosk_process_help_ar, paygw_paymob {{/ str }}</p>
+            <p>{{# str }} kiosk_process_help, paygw_paymob {{/ str }}</p>
+            {{{continue}}}
         </div>
     {{/show_accept_iframe}}
 </div>
