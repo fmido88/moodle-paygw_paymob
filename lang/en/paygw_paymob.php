@@ -83,3 +83,11 @@ $string['somethingwrong'] = 'Something went wrong. Please try again later and if
 $string['usenewcard'] = 'Use another card';
 $string['wallet_phone_number'] = 'Wallet Phone Number';
 $string['aman_key'] = 'Reference key for aman or masary';
+
+$string['privacy:metadata:paygw_paymob'] = 'In order to perform a successful transaction, Paymob will receive various metadata about the user.';
+$string['privacy:metadata:paygw_paymob:firstname'] = 'User\'s first name will be sent to Paymob upon any transactions.';
+$string['privacy:metadata:paygw_paymob:lastname'] = 'User\'s last name will be sent to Paymob upon any transactions.';
+$string['privacy:metadata:paygw_paymob:country'] = 'User\'s country will be sent to Paymob upon any transactions.';
+$string['privacy:metadata:paygw_paymob:city'] = 'User\'s city will be sent to Paymob upon any transactions.';
+$string['privacy:metadata:paygw_paymob:phone'] = 'User\'s phone number will be sent to Paymob upon any transactions, this should be a valid number or it will return an error.';
+$string['privacy:metadata:paygw_paymob:email'] = 'User\'s email will be sent to Paymob upon any transactions, and it should be a valid email.';

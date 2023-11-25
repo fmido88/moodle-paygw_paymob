@@ -27,13 +27,15 @@ namespace paygw_paymob\privacy;
 
 use core_payment\privacy\paygw_provider;
 use core_privacy\local\request\writer;
+use core_privacy\local\metadata\collection;
+
 /**
  * Privacy Subsystem implementation for paygw_paymob.
  *
  * @copyright  2023 Mo. Farouk <phun.for.physics@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider, paygw_provider {
+class provider implements \core_privacy\local\metadata\provider, paygw_provider {
 
     /**
      * Get the language string identifier with the component's language
@@ -45,6 +47,18 @@ class provider implements \core_privacy\local\metadata\null_provider, paygw_prov
         return 'privacy:metadata';
     }
 
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_external_location_link('paygw_paymob', [
+                'firstname' => 'privacy:metadata:paygw_paymob:firstname',
+                'lastname'  => 'privacy:metadata:paygw_paymob:lastname',
+                'country'   => 'privacy:metadata:paygw_paymob:country',
+                'city'      => 'privacy:metadata:paygw_paymob:city',
+                'phone'     => 'privacy:metadata:paygw_paymob:phone',
+                'email'     => 'privacy:metadata:paygw_paymob:email',
+        ], 'privacy:metadata:paygw_paymob');
+
+        return $collection;
+    }
     /**
      * Export all user data for the specified payment record, and the given context.
      *
