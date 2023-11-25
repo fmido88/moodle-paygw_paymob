@@ -83,3 +83,4 @@ $string['savedcardsnotify'] = 'Welcome {$a}, looks like you have saved cards ple
 $string['somethingwrong'] = 'Something went wrong. Please try again later and if the problem still persist, contact support.';
 $string['usenewcard'] = 'Use another card';
 $string['wallet_phone_number'] = 'Wallet Phone Number';
+$string['aman_key'] = 'Reference key for aman or masary';

@@ -159,8 +159,9 @@ if ($method == 'wallet') {
     $PAGE->set_context(context_system::instance());
 
     $PAGE->set_url('/payment/gateway/paymob/process.php', $params);
-    $PAGE->set_title(format_string('Reference key for aman or masary'));
-    $PAGE->set_heading(format_string('Reference key for aman or masary'));
+    $title = get_string('aman_key', 'paygw_paymob');
+    $PAGE->set_title($title);
+    $PAGE->set_heading($title);
 
     $PAGE->set_cacheable(false);
     $PAGE->set_pagelayout('frontpage');
