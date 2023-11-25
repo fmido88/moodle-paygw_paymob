@@ -28,6 +28,6 @@ export const process = (component, paymentArea, itemId, description) => {
                 '&paymentarea=' + paymentArea +
                 '&itemid=' + itemId +
                 '&description=' + description;
-            return;
+            return 'Redirecting...';
         };
 };
