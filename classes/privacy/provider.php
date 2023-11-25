@@ -47,6 +47,11 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
         return 'privacy:metadata';
     }
 
+    /**
+     * Returns meta data about this system.
+     * @param collection $collection
+     * @return collection
+     */
     public static function get_metadata(collection $collection): collection {
         $collection->add_external_location_link('paygw_paymob', [
                 'firstname' => 'privacy:metadata:paygw_paymob:firstname',

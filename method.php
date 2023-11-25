@@ -93,10 +93,10 @@ if ($cost >= (float)$min) {
     $templatedata->hascard     = (!empty($config->IntegrationIDcard) && !empty($config->iframe_id));
     $templatedata->haswallet   = !empty($config->IntegrationIDwallet);
     $templatedata->haskiosk    = !empty($config->IntegrationIDkiosk);
-    
+
     $cards = $DB->get_records('paygw_paymob_cards_token', ['userid' => $USER->id]);
     $templatedata->validcurrency = ($currency == 'EGP');
-    
+
     if (!empty($cards)) {
         $templatedata->saved = true;
         $templatedata->savedcardsnotify = get_string('savedcardsnotify', 'paygw_paymob', fullname($USER));
@@ -109,7 +109,7 @@ if ($cost >= (float)$min) {
         }
         $templatedata->savedcards = array_values($savedcards);
     }
-    
+
     echo $OUTPUT->render_from_template('paygw_paymob/method', $templatedata);
 } else {
     notice(get_string('low_payment', 'paygw_paymob', $min));
