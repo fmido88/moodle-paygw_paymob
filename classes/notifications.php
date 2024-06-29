@@ -40,7 +40,7 @@ class notifications {
     /**
      * The order completed
      */
-    public const COMPLETED = 'completed';
+    public const COMPLETED = 'success';
     /**
      * Pending
      */
@@ -68,22 +68,16 @@ class notifications {
      * this function sending the message to the user and return the id of the message if needed
      * or false in case of error.
      *
-     * @param int $userid
-     * @param float $fee
-     * @param int $orderid
+     * @param order $order
      * @param string $type
      * @param string $reason
      * @return int|false
      */
-    public static function notify($userid, $fee, $orderid, $type, $reason = '') {
+    public static function notify($order, $type, $reason = '') {
         global $DB;
 
-        // Get the item from the database, and payable to get the currency.
-        $item = $DB->get_record('paygw_paymob', ['pm_orderid' => $orderid]);
-        $payable = \core_payment\helper::get_payable($item->component, $item->paymentarea, $item->itemid);
-
         // Get the user object for messaging and fullname.
-        $user = \core_user::get_user($userid);
+        $user = $order->get_user();
         if (empty($user) || isguestuser($user) || !empty($user->deleted)) {
             return false;
         }
@@ -92,27 +86,19 @@ class notifications {
 
         // Set the object wiht all informations to notify the user.
         $a = (object)[
-            'fee'      => $fee, // The original cost.
-            'cost'     => $item->cost, // The cost after discounts.
-            'currency' => $payable->get_currency(),
+            'fee'      => $order->get_raw_cost(), // The original cost.
+            'cost'     => $order->get_cost(), // The cost after discounts.
+            'currency' => $order->get_currency(),
             'status'   => $type,
             'reason'   => $reason, // The reason in case of declination.
-            'orderid'  => $orderid,
+            'orderid'  => $order->get_pm_orderid(),
             'fullname' => $userfullanme,
         ];
 
-        switch ($item->method) {
-            case('card'):
-                $a->method = get_string('method_card', 'paygw_paymob');
-                break;
-            case('wallet'):
-                $a->method = get_string('method_wallet', 'paygw_paymob');
-                break;
-            case('kiosk'):
-                $a->method = get_string('method_kiosk', 'paygw_paymob');
-                break;
-            default:
-                $a->method = 'not defined';
+        $notes = $order->get_order_notes();
+        if (!empty($notes)) {
+            $note = reset($notes);
+            $a->method = $note->type / $note->subtype;
         }
 
         $message = new \core\message\message();
@@ -121,31 +107,49 @@ class notifications {
         $message->userfrom  = \core_user::get_noreply_user(); // If the message is 'from' a specific user you can set them here.
         $message->userto    = $user;
         $message->subject   = get_string('messagesubject', 'paygw_paymob', $type);
+        $notifytype = 'error';
         switch ($type) {
-            case 'success_processing':
+            case self::PROCESSING:
                 $messagebody = get_string('message_success_processing', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_processing', 'paygw_paymob');
+                $notifytype = 'success';
                 break;
-            case 'success_completed':
+            case self::COMPLETED:
                 $messagebody = get_string('message_success_completed', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_success', 'paygw_paymob');
+                $notifytype = 'success';
                 break;
-            case 'pending':
+            case self::PENDING:
                 $messagebody = get_string('message_pending', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_pendig', 'paygw_paymob');
+                $notifytype = 'info';
                 break;
-            case 'voided':
+            case self::VOIDED:
                 $messagebody = get_string('message_voided', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_voided', 'paygw_paymob');
                 break;
-            case 'refunded':
+            case self::REFUNDED:
                 $messagebody = get_string('message_refunded', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_refunded', 'paygw_paymob');
                 break;
-            case 'downpayment':
+            case self::DOWN_PAYMENT:
                 $messagebody = get_string('message_downpayment', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_downpayment', 'paygw_paymob');
                 break;
             case 'declined':
                 $messagebody = get_string('message_declined', 'paygw_paymob', $a);
+                $notifyheader = get_string('notify_declined', 'paygw_paymob');
                 break;
+            default:
+                $notifyheader = get_string('notify_error', 'paygw_paymob');
         }
 
         $header = get_string('payment_notification', 'paygw_paymob');
+
+        \core\notification::add($notifyheader, $notifytype);
+        if (empty($messagebody)) {
+            return false;
+        }
 
         $message->fullmessage       = $messagebody;
         $message->fullmessageformat = FORMAT_HTML;

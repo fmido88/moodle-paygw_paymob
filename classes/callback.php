@@ -95,17 +95,15 @@ class callback {
             $transaction   = $obj['id'];
             $paymobid      = $obj['order']['id'];
 
-            if ($obj['success'] && !$obj['is_voided']
-                && !$obj['is_refunded'] && !$obj['pending']
-                && !$obj['is_void'] && !$obj['is_refund']
-                && !$obj['error_occured']) {
+            $order->add_order_note_data($integrationid, $type, $subtype, $transaction, $paymobid);
 
+            $status = utils::get_order_status($obj);
+            if ($status === 'success') {
                 $order->payment_complete();
             } else {
-                $order->update_status('failed');
+                $order->update_status($status);
             }
-
-            $order->add_order_note_data($integrationid, $type, $subtype, $transaction, $paymobid);
+            notifications::notify($order, $status);
 
             die("Order updated: $orderid");
         } else {
@@ -153,29 +151,25 @@ class callback {
 
         $order->verify_order_changeable();
 
-        if (!empty( $cleaned['transaction'])) {
+        if (!empty($cleaned['transaction'])) {
             $trans         = $cleaned['transaction'];
-            $integrationid = $cleaned['transaction']['integration_id'];
-            $type          = $cleaned['transaction']['source_data']['type'];
-            $subtype       = $cleaned['transaction']['source_data']['sub_type'];
-            if ($trans['success'] && !$trans['is_voided']
-                && !$trans['is_refunded'] && !$trans['is_capture']) {
+            $transaction   = $trans['id'];
+            $integrationid = $trans['integration_id'];
+            $type          = $trans['source_data']['type'];
+            $subtype       = $trans['source_data']['sub_type'];
+            $paymobid      = $trans['order']['id'];
 
-                $transaction = $cleaned['transaction']['id'];
-                $paymobid    = $cleaned['transaction']['order']['id'];
-
-                $order->payment_complete();
-            } else if (!$trans['success'] && $trans['is_refunded']
-                    && !$trans['is_voided'] && !$trans['is_capture']) {
-                $order->update_status('refunded');
-
-            } else if (!$trans['success'] && !$trans['is_voided']
-                    && !$trans['is_refunded'] && !$trans['is_capture']) {
-                $order->update_status( 'failed' );
-            }
+            $status = utils::get_order_status($trans);
             $order->add_order_note_data($integrationid, $type, $subtype, $transaction, $paymobid);
+            if ($status === 'success') {
+                $order->payment_complete();
+            } else {
+                $order->update_status($status);
+            }
+
             die("Order updated: $orderid");
         }
+        die("Invalid response");
     }
 
     /**
@@ -210,9 +204,9 @@ class callback {
 
         $url = $order->get_redirect_url();
 
-        if (security::filter_var('success')
-            && !security::filter_var('is_voided')
-            && !security::filter_var('is_refunded')) {
+        $obj = security::clean_param('', $_GET);
+        $status = utils::get_order_status($obj);
+        if ($status === 'success') {
             if (!$order->verify_order_changeable(false)) {
                 redirect($url, get_string('payment_processing', 'paygw_paymob'), null, 'success');
                 exit();

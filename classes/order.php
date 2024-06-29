@@ -348,7 +348,7 @@ class order {
                               $paymentid,
                               $this->userid);
         // Notify user.
-        notifications::notify($this->userid, $this->cost, $this->id, 'success_completed');
+        notifications::notify($this, 'success_completed');
     }
 
     /**
