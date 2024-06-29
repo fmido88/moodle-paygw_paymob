@@ -1,0 +1,43 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template paygw_paymob/admin
+
+    TODO describe template admin
+
+    Example context (json):
+    {
+    }
+}}
+<div class="paygy-paymob-logo">
+    <img src="{{wwwroot}}/payment/gateway/paymob/img/paymob.png" alt="PayMob" style="width:50%"/>
+</div>
+<div class="paygw-paymob-wraber form-group row fitem">
+    <div class="paygw-paymob-loader" style="background: url('{{wwwroot}}/payment/gateway/paymob/img/loading.gif') 50% 50% no-repeat rgb(249,249,249);"></div>
+    <div class="paygw-paymob-error"></div>
+    <!--<div class="paygw-paymob-loader-stat">
+        <div class="fa fa-check-circle paygw-paymob-success_load"></div>
+        <div class="fa fa-times-circle paygw-paymob-failed_load"></div>
+    </div>-->
+    <div>{{#str}} admin_help, paygw_paymob {{/str}}</div>
+    <br>
+    <div class="span-align">
+        <span id="accept-login" class="btn btn-primary">Validate PayMob API Key</span>
+        <span class="fa fa-check-circle paygw-paymob-valid" id="paygw-paymob-valid" style="display: none;"></span>
+        <span class="fa fa-times-circle paygw-paymob-not-valid" id="paygw-paymob-not-valid" style="display: none;"></span>
+    </div>
+</div>

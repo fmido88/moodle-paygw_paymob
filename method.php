@@ -22,8 +22,6 @@
  * @copyright   2023 Mohammad Farouk <phun.for.physics@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-use core_payment\helper;
-use paygw_paymob\paymob_helper;
 
 require_once(__DIR__ . '/../../../config.php');
 
@@ -34,7 +32,7 @@ global $CFG, $USER, $DB;
 $component   = required_param('component', PARAM_ALPHANUMEXT);
 $paymentarea = required_param('paymentarea', PARAM_ALPHANUMEXT);
 $itemid      = required_param('itemid', PARAM_INT);
-$description = required_param('description', PARAM_TEXT);
+$description = optional_param('description', '', PARAM_TEXT);
 
 $params = [
     'component'   => $component,
@@ -43,21 +41,26 @@ $params = [
     'description' => $description,
 ];
 
-$config = (object) helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
+$order = paygw_paymob\order::created_order($component, $paymentarea, $itemid);
+$config = $order->get_gateway_config();
 
-$payable = helper::get_payable($component, $paymentarea, $itemid);// Get currency and payment amount.
-$surcharge = helper::get_gateway_surcharge('paymob');// In case user uses surcharge.
+$currency = $order->get_currency();
+$cost = $order->get_cost();
 
-$currency = $payable->get_currency();
-$cost = helper::get_rounded_cost($payable->get_amount(), $currency, $surcharge);
+$methods = paygw_paymob\utils::get_payment_methods($config, $currency);
 
-// Adding discount condition.
-if (isset($config->discount)
-    && $config->discount > 0 &&
-    isset($config->discountcondition) &&
-    $cost >= $config->discountcondition) {
+$hascard = false;
+$haswallet = false;
+$hasaman = false;
+$hasany = false;
+foreach ($methods as $key => $id) {
+    $var = 'has'.$key;
+    $$var = true;
+    $hasany = true;
+}
 
-    $cost = $cost * (100 - $config->discount) / 100;
+if (empty($config->iframe_id)) {
+    $hascard = false;
 }
 
 $min = $config->minimum_allowed ?? 0;
@@ -69,30 +72,24 @@ $PAGE->set_url('/payment/gateway/paymob/method.php', $params);
 $PAGE->set_title(format_string('Paying for '.$description));
 $PAGE->set_heading(format_string('Paying for '.$description));
 
-// Set the appropriate headers for the page.
 $PAGE->set_cacheable(false);
 $PAGE->set_pagelayout('frontpage');
 
 echo $OUTPUT->header();
 
-if ($cost >= (float)$min) {
-
-    $apikey = $config->apikey;
-    $helper = new paymob_helper($apikey);
+if ($cost >= (float)$min && $hasany) {
 
     $templatedata = new stdClass;
-    $templatedata->component   = $component;
-    $templatedata->paymentarea = $paymentarea;
-    $templatedata->itemid      = $itemid;
     $templatedata->description = $description;
+    $templatedata->orderid     = $order->get_id();
     $templatedata->fee         = $cost;
     $templatedata->currency    = $currency;
-    $templatedata->itemname    = $description;
     $templatedata->url         = $CFG->wwwroot;
     $templatedata->saved       = false;
-    $templatedata->hascard     = (!empty($config->IntegrationIDcard) && !empty($config->iframe_id));
-    $templatedata->haswallet   = !empty($config->IntegrationIDwallet);
-    $templatedata->haskiosk    = !empty($config->IntegrationIDkiosk);
+    $templatedata->hascard     = $hascard;
+    $templatedata->haswallet   = $haswallet;
+    $templatedata->haskiosk    = $hasaman;
+    $templatedata->sesskey     = sesskey();
 
     $cards = $DB->get_records('paygw_paymob_cards_token', ['userid' => $USER->id]);
     $templatedata->validcurrency = ($currency == 'EGP');
@@ -111,8 +108,10 @@ if ($cost >= (float)$min) {
     }
 
     echo $OUTPUT->render_from_template('paygw_paymob/method', $templatedata);
-} else {
+} else if ($hasany) {
     notice(get_string('low_payment', 'paygw_paymob', $min));
+} else {
+    notice(get_string('no_payment_integration', 'paygw_paymob'));
 }
 
 echo $OUTPUT->footer();

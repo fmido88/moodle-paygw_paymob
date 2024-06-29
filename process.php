@@ -22,90 +22,67 @@
  * @copyright   2023 Mohammad Farouk <phun.for.physics@gmail.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-use core_payment\helper;
-use paygw_paymob\paymob_helper;
+use paygw_paymob\legacy_requester;
 
 require_once(__DIR__ . '/../../../config.php');
 require_login();
 global $DB, $USER;
 
 $delete      = optional_param('delete', '', PARAM_INT);
-$component   = required_param('component', PARAM_TEXT);
-$paymentarea = required_param('paymentarea', PARAM_TEXT);
 $description = optional_param('description', '', PARAM_TEXT);
-$itemid      = required_param('itemid', PARAM_INT);
+$orderid     = required_param('orderid', PARAM_INT);
+$sesskey     = required_param('sesskey', PARAM_ALPHANUM);
 
+// Get the rest of params in case of payment process.
+$method         = optional_param('method', '', PARAM_TEXT);
+$itemname       = $description;
+$walletnumber   = optional_param('phone-number', 0, PARAM_INT);
+$savedcardtoken = optional_param('card_token', false, PARAM_RAW);
+
+$order = new paygw_paymob\order($orderid);
 $returnbackurl = new moodle_url('/payment/gateway/paymob/method.php',
                                         [
-                                            'component'   => $component,
-                                            'paymentarea' => $paymentarea,
+                                            'component'   => $order->get_component(),
+                                            'paymentarea' => $order->get_paymentarea(),
+                                            'itemid'      => $order->get_itemid(),
                                             'description' => $description,
-                                            'itemid'      => $itemid,
                                         ]);
 
 // Check first if the user try to delete old card, and send back the required params.
-if (!empty($delete)) {
+if (!empty($delete) && confirm_sesskey()) {
     $DB->delete_records('paygw_paymob_cards_token', ['id' => $delete]);
 
     $msg = get_string('card_deleted', 'paygw_paymob');
     redirect($returnbackurl, $msg);
 }
-
-// Get the rest of params in case of payment process.
-$method         = optional_param('method', '', PARAM_TEXT);
-$itemname       = optional_param('itemname', '', PARAM_TEXT);
-$walletnumber   = optional_param('phone-number', 0, PARAM_INT);
-$savedcardtoken = optional_param('card_token', false, PARAM_RAW);
-
 $params = [
-    'component'    => $component,
-    'paymentarea'  => $paymentarea,
+    'orderid'      => $orderid,
     'description'  => $description,
-    'itemid'       => $itemid,
     'method'       => $method,
-    'itemname'     => $itemname,
     'phone-number' => $walletnumber,
     'card-token'   => $savedcardtoken,
+    'sesskey'      => $sesskey,
 ];
-// Get all configuration perefernce.
-$config = (object) helper::get_gateway_configuration($component, $paymentarea, $itemid, 'paymob');
-
-$payable = helper::get_payable($component, $paymentarea, $itemid);// Get currency and payment amount.
-$surcharge = helper::get_gateway_surcharge('paymob');// In case user uses surcharge.
-$successurl = helper::get_success_url($component, $paymentarea, $itemid);
-$cost = helper::get_rounded_cost($payable->get_amount(), $payable->get_currency(), $surcharge);
-
-// Check if there is enabled discounts and this payment within the conditions.
-if (
-    isset($config->discount)
-    && $config->discount > 0
-    && isset($config->discountcondition)
-    && $cost >= $config->discountcondition
-    ) {
-    // Apply the discount.
-    $cost = $cost * (100 - $config->discount) / 100;
-}
-$data = new \stdClass;
-$data->component   = $component;
-$data->paymentarea = $paymentarea;
-$data->itemid      = $itemid;
-$data->method      = $method;
-$data->status      = 'requested';
+// Get all configuration preference.
+$config = $order->get_gateway_config();
+$successurl = $order->get_redirect_url();
+$cost = $order->get_cost();
 
 // Because the amount sent to paymob is in censts.
-$fee = $cost * 100;
-$currency = $payable->get_currency();
+$fee = $order->get_amount_cents();
+$currency = $order->get_currency();
 
 $apikey = $config->apikey;
 
-$helper = new paymob_helper($apikey);
+$helper = new legacy_requester($apikey);
 
 $error = get_string('somethingwrong', 'paygw_paymob');
 
-if ($method == 'wallet') {
+$methods = paygw_paymob\utils::get_payment_methods($config, $currency);
+if ($method == 'wallet' && array_key_exists('wallet', $methods)) {
     // Get the integration id of this payment method.
-    $intid = $config->IntegrationIDwallet;
-    $data->intid       = $intid;
+    $intid = $methods['wallet'];
+
     // Requesting all data need to complete the payment using this method.
     $wallet = $helper->request_wallet_url($walletnumber, $description, $fee, $currency, $intid);
 
@@ -118,13 +95,9 @@ if ($method == 'wallet') {
     $iframeurl = $wallet->iframeurl;
     $method    = $wallet->method;
 
-    $id = $DB->get_field('paygw_paymob', 'id', ['pm_orderid' => $orderid]);
-    $data->id     = $id;
-    $data->pm_orderid  = $orderid;
-    $data->method = $method;
-
     // Updating the record so we can reuse it in the callback process.
-    $DB->update_record('paygw_paymob', $data);
+    $order->set_pm_orderid($wallet->orderid, false);
+    $order->update_status('pending');
     // Redirect the user to the payment page.
     if (!empty($walleturl)) {
         redirect($walleturl);
@@ -135,26 +108,23 @@ if ($method == 'wallet') {
         redirect($returnbackurl, $error, null, 'error');;
     }
 
-} else if ($method == 'kiosk') {
+} else if ($method == 'aman' && isset($methods['aman'])) {
     // Get the integration id of this payment method.
-    $intid = $config->IntegrationIDkiosk;
-    $data->intid       = $intid;
+    $intid       = $methods['aman'];
+
     // Requesting all data need to complete the payment using this method.
     $kiosk = $helper->request_kiosk_id($itemname, $fee, $currency, $intid);
     if (empty($kiosk)) {
         redirect($returnbackurl, $error, null, 'error');
     }
+
     $orderid   = $kiosk->orderid;
     $reference = $kiosk->reference;
     $method    = $kiosk->method;
-    $data->pm_orderid  = $orderid;
-
-    $id = $DB->get_field('paygw_paymob', 'id', ['pm_orderid' => $orderid]);
-    $data->id     = $id;
-    $data->method = $method;
 
     // Updating the record so we can reuse it in the callback process.
-    $DB->update_record('paygw_paymob', $data);
+    $order->set_pm_orderid($kiosk->orderid, false);
+    $order->update_status('pending');
     // Set the context of the page.
     $PAGE->set_context(context_system::instance());
 
@@ -180,10 +150,9 @@ if ($method == 'wallet') {
     echo $OUTPUT->footer();
     exit;
 
-} else if ($method == 'card') {
+} else if ($method == 'card' && isset($methods['card']) && !empty($config->iframe_id)) {
     // Get the integration id of this payment method.
-    $intid = $config->IntegrationIDcard;
-    $data->intid       = $intid;
+    $intid = $methods['card'];
     // Get the iframe id for card payments.
     $iframeid = $config->iframe_id;
 
@@ -192,15 +161,13 @@ if ($method == 'wallet') {
     if (empty($request)) {
         redirect($returnbackurl, $error, null, 'error');
     }
+
     $token   = $request->paytoken;
     $orderid = $request->orderid;
-    $data->pm_orderid  = $orderid;
-
-    $id = $DB->get_field('paygw_paymob', 'id', ['pm_orderid' => $orderid]);
-    $data->id = $id;
 
     // Updating the record so we can reuse it in the callback process.
-    $DB->update_record('paygw_paymob', $data);
+    $order->set_pm_orderid($request->orderid, false);
+    $order->update_status('pending');
     // Set the context of the page.
     $PAGE->set_context(context_system::instance());
 

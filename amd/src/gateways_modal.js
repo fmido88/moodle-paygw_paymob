@@ -21,13 +21,53 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-export const process = (component, paymentArea, itemId, description) => {
-    return () => {
-            location.href = M.cfg.wwwroot + '/payment/gateway/paymob/method.php?' +
-                'component=' + component +
-                '&paymentarea=' + paymentArea +
-                '&itemid=' + itemId +
-                '&description=' + description;
-            return 'Redirecting...';
-        };
+import prefetch from 'core/prefetch';
+import { get_string } from 'core/str';
+import Ajax from 'core/ajax';
+
+prefetch.prefetchStrings('paygw_paymob', ['error']);
+/**
+ * Return the payment url requested from paymob.
+ *
+ * @param {string} component
+ * @param {string} paymentArea
+ * @param {number} itemId
+ * @param {string} description
+ * @returns
+ */
+function get_url(component, paymentArea, itemId, description) {
+    let requests = Ajax.call([{
+        methodname: 'payge_paymob_get_payment_url',
+        args: {
+            component: component,
+            paymentarea: paymentArea,
+            itemid: itemId,
+            description: description
+        }
+    }]);
+    return requests[0];
+}
+
+export const process = async (component, paymentArea, itemId, description) => {
+    return get_url(component, paymentArea, itemId, description).then((ajaxdata) => {
+        if (ajaxdata.success && ajaxdata.url) {
+            window.location.href = ajaxdata.url;
+            return new Promise(() => null);
+        } else {
+            return get_string('error', 'paygw_paymob', ajaxdata.error);
+        }
+    });
+    // return Promise.all([
+    //     get_url(component, paymentArea, itemId),
+    //     get_string('redirect', 'paygw_paymob'),
+    // ]).then(async ([ajaxdata, redirectString]) => {
+    //     if (ajaxdata.success && ajaxdata.url) {
+    //         // await (window.location.href = ajaxdata.url);
+    //         return redirectString;
+    //     } else {
+    //         get_string('error', 'paygw_paymob', ajaxdata.error).then((errorString) => {
+    //             return errorString;
+    //         });
+    //     }
+    // });
 };

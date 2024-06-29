@@ -43,7 +43,7 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
      *
      * @return  string
      */
-    public static function get_reason() : string {
+    public static function get_reason(): string {
         return 'privacy:metadata';
     }
 
@@ -62,6 +62,9 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
                 'email'     => 'privacy:metadata:paygw_paymob:email',
         ], 'privacy:metadata:paygw_paymob');
 
+        $collection->add_database_table('paygw_paymob_orders', [
+            'userid' => 'privacy:metadata:paygw_paymob:userid',
+        ]);
         return $collection;
     }
     /**
@@ -76,12 +79,12 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
 
         $subcontext[] = get_string('gatewayname', 'paygw_paymob');
         $conditions = [
-            'paymentid' => $payment->id,
+            'payment_id' => $payment->id,
         ];
 
-        $record = $DB->get_record('paygw_paymob', $conditions);
+        $record = $DB->get_record('paygw_paymob_orders', $conditions);
 
-        $data = (object) [
+        $data = (object)[
             'orderid' => $record->pm_orderid,
         ];
         writer::with_context($context)->export_data(
@@ -99,6 +102,6 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
     public static function delete_data_for_payment_sql(string $paymentsql, array $paymentparams) {
         global $DB;
 
-        $DB->delete_records_select('paygw_paymob', "paymentid IN ({$paymentsql})", $paymentparams);
+        $DB->delete_records_select('paygw_paymob_orders', "payment_id IN ({$paymentsql})", $paymentparams);
     }
 }

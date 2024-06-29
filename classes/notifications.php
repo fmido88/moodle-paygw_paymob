@@ -34,6 +34,34 @@ namespace paygw_paymob;
 class notifications {
 
     /**
+     * The order is processing or need action.
+     */
+    public const PROCESSING = 'processing';
+    /**
+     * The order completed
+     */
+    public const COMPLETED = 'completed';
+    /**
+     * Pending
+     */
+    public const PENDING = 'pending';
+    /**
+     * The transaction voided
+     */
+    public const VOIDED = 'voided';
+    /**
+     * The transaction refunded
+     */
+    public const REFUNDED = 'refunded';
+    /**
+     * Declined transactions
+     */
+    public const DECLINED = 'declined';
+    /**
+     * Down-payment
+     */
+    public const DOWN_PAYMENT = 'downpayment';
+    /**
      * Function that handle the notifications about transactions using Paymob payment gateway
      * and all kinds of responses.
      *
@@ -120,7 +148,7 @@ class notifications {
         $header = get_string('payment_notification', 'paygw_paymob');
 
         $message->fullmessage       = $messagebody;
-        $message->fullmessageformat = FORMAT_MARKDOWN;
+        $message->fullmessageformat = FORMAT_HTML;
         $message->fullmessagehtml   = "<p>$messagebody</p>";
         $message->smallmessage      = get_string('payment_attention', 'paygw_paymob', $type);
         $message->notification      = 1; // Because this is a notification generated from Moodle, not a user-to-user message.

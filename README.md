@@ -1,6 +1,6 @@
 # Paymob payment #
 
-Paymob is a gateway where you can accept payment in Egypt with different methods.
+Paymob is a gateway where you can accept payment in Egypt, KSA, Oman, UAE, Pakistan with different methods.
 
 1- By cerdit cards.
 2- Mobile wallets.

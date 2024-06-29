@@ -64,29 +64,23 @@
 
     <div class="form-group">
         <label for="payment-type" class="h3">{{# str }} paymentmethods, paygw_paymob {{/ str}}</label>
-        <div class="paymob-image-place-holder">
-        </div>
+        <div class="paymob-image-place-holder"></div>
         <select class="form-control" id="payment-type" name="method" onchange="extraData(), changeImage()">
             {{#hascard}}
             <option value="card" selected>{{# str }} method_card, paygw_paymob {{/ str}}</option>
             {{/hascard}}
-            {{#validcurrency}}
             {{#haskiosk}}
-            <option value="kiosk">{{# str }} method_kiosk, paygw_paymob {{/ str}}</option>
+            <option value="aman">{{# str }} method_kiosk, paygw_paymob {{/ str}}</option>
             {{/haskiosk}}
             {{#haswallet}}
             <option value="wallet">{{# str }} method_wallet, paygw_paymob {{/ str}}</option>
             {{/haswallet}}
-            {{/validcurrency}}
         </select>
-
     </div>
-    <div class="hidden-inputs">
-        <input type="hidden" class="hidden-inputs" id="component" name="component" value="{{{component}}}">
-        <input type="hidden" class="hidden-inputs" id="paymentarea" name="paymentarea" value="{{{paymentarea}}}">
-        <input type="hidden" class="hidden-inputs" id="itemid" name="itemid" value="{{{itemid}}}">
-        <input type="hidden" class="hidden-inputs" id="description" name="description" value="{{{description}}}">
-        <input type="hidden" class="hidden-inputs" id="itemname" name="itemname" value="{{{itemname}}}">
+    <div class="hidden-inputs" style="display:none;">
+        <input type="hidden" class="hidden-inputs" name="description" value="{{description}}">
+        <input type="hidden" class="hidden-inputs" name="orderid" value="{{orderid}}">
+        <input type="hidden" class="hidden-inputs" name="sesskey" value="{{sesskey}}">
     </div>
     {{#hascard}}
     <div class="form-group" id="saved-cards-group">
@@ -124,16 +118,32 @@
         const paymentTypeSelect = document.getElementById('payment-type');
         const savedCardsGroup = document.getElementById('saved-cards-group');
         if (paymentTypeSelect.value === 'wallet') {
-            phoneGroup.style.display = 'block';
-            savedCardsGroup.style.display = 'none';
+            if (phoneGroup) {
+                phoneGroup.style.display = 'block';
+            }
+            if (savedCardsGroup) {
+                savedCardsGroup.style.display = 'none';
+            }
         } else if (paymentTypeSelect.value === 'card'){
-            phoneGroup.style.display = 'none';
-            phoneNumberInput.value = '';
-            savedCardsGroup.style.display = 'block';
+            if (phoneGroup) {
+                phoneGroup.style.display = 'none';
+            }
+            if (phoneNumberInput) {
+                phoneNumberInput.value = '';
+            }
+            if (savedCardsGroup) {
+                savedCardsGroup.style.display = 'block';
+            }
         } else {
-            phoneGroup.style.display = 'none';
-            phoneNumberInput.value = '';
-            savedCardsGroup.style.display = 'none';
+            if (phoneGroup) {
+                phoneGroup.style.display = 'none';
+            }
+            if (phoneNumberInput) {
+                phoneNumberInput.value = '';
+            }
+            if (savedCardsGroup) {
+                savedCardsGroup.style.display = 'none';
+            }
         }
     }
 
@@ -144,12 +154,12 @@
         // define a mapping of payment method values to image URLs
         const imageUrls = {
             card: '{{{url}}}/payment/gateway/paymob/img/visa_mastercard.png',
-            kiosk: '{{{url}}}/payment/gateway/paymob/img/aman.png',
+            aman: '{{{url}}}/payment/gateway/paymob/img/aman.png',
             wallet: '{{{url}}}/payment/gateway/paymob/img/Wallets.png'
         };
         const imageAlts = {
             card: 'visa_mastercard',
-            kiosk: 'aman',
+            aman: 'aman',
             wallet: 'Wallets'
         };
         // get the selected payment method value
