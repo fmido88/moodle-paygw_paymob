@@ -22,7 +22,8 @@
  */
 
 import prefetch from 'core/prefetch';
-import { get_string } from 'core/str';
+// eslint-disable-next-line camelcase
+import {get_string} from 'core/str';
 import Ajax from 'core/ajax';
 
 prefetch.prefetchStrings('paygw_paymob', ['error']);
@@ -33,9 +34,9 @@ prefetch.prefetchStrings('paygw_paymob', ['error']);
  * @param {string} paymentArea
  * @param {number} itemId
  * @param {string} description
- * @returns
+ * @returns {Promise}
  */
-function get_url(component, paymentArea, itemId, description) {
+function getUrl(component, paymentArea, itemId, description) {
     let requests = Ajax.call([{
         methodname: 'payge_paymob_get_payment_url',
         args: {
@@ -48,8 +49,8 @@ function get_url(component, paymentArea, itemId, description) {
     return requests[0];
 }
 
-export const process = async (component, paymentArea, itemId, description) => {
-    return get_url(component, paymentArea, itemId, description).then((ajaxdata) => {
+export const process = async(component, paymentArea, itemId, description) => {
+    return getUrl(component, paymentArea, itemId, description).then((ajaxdata) => {
         if (ajaxdata.success && ajaxdata.url) {
             window.location.href = ajaxdata.url;
             return new Promise(() => null);
@@ -57,17 +58,4 @@ export const process = async (component, paymentArea, itemId, description) => {
             return get_string('error', 'paygw_paymob', ajaxdata.error);
         }
     });
-    // return Promise.all([
-    //     get_url(component, paymentArea, itemId),
-    //     get_string('redirect', 'paygw_paymob'),
-    // ]).then(async ([ajaxdata, redirectString]) => {
-    //     if (ajaxdata.success && ajaxdata.url) {
-    //         // await (window.location.href = ajaxdata.url);
-    //         return redirectString;
-    //     } else {
-    //         get_string('error', 'paygw_paymob', ajaxdata.error).then((errorString) => {
-    //             return errorString;
-    //         });
-    //     }
-    // });
 };
