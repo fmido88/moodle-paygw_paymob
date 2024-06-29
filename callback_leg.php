@@ -122,7 +122,7 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
                     // Also, it may be helpful in the future if we add an option of down-payment for a course
                     // for example and the rest after some time. For now just notification will be good.
                     // Notify user that this payment is a down payment.
-                    notifications::notify($userid, $cost, $orderid, 'downpayment');
+                    notifications::notify($order, 'downpayment');
                 }
 
                 $order->payment_complete();
@@ -140,7 +140,7 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
 
                 $order->update_status('refunded');
                 // Notify user.
-                notifications::notify($userid, $cost, $orderid, 'refunded', '');
+                notifications::notify($order, 'refunded');
             } else if ( // Voided payment (cancelled) by vender or merchant.
                 $obj['success'] === true &&
                 $obj['is_voided'] === true &&
@@ -152,7 +152,7 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
 
                 $order->update_status('voided');
                 // Notify user that the transaction is voided.
-                notifications::notify($userid, $cost, $orderid, 'voided', '');
+                notifications::notify($order, 'voided');
             } else if ( // Pending payments, This means that the user didn't complete it yet.
                 $obj['success'] === false &&
                 $obj['is_voided'] === false &&
@@ -163,7 +163,7 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
 
                 $order->update_status('pending');
                 // Notify user that the transaction still pending and need his action.
-                notifications::notify($userid, $cost, $orderid, 'pending', '');
+                notifications::notify($order, 'pending');
             }
 
             die("Order updated: $orderid");
@@ -237,7 +237,7 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
                 'description' => '',
             ];
             // Notify user with the reason of declination if it is set.
-            notifications::notify($userid, $cost, $orderid, 'declined', $a);
+            notifications::notify($order, 'declined', $a);
             redirect(new moodle_url('/payment/gateway/paymob/method.php', $params),
                         get_string('paymentcancelled', 'paygw_paymob', $a), null, 'error');
         }

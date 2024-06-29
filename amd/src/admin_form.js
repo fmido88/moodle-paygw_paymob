@@ -25,10 +25,29 @@ import $ from 'jquery';
 import Ajax from 'core/ajax';
 
 let ajaxObject = new Object();
+
+/**
+ * Show error message
+ * @param {string} msg
+ */
+function showError(msg) {
+    $('.paygw-paymob-error').text(msg);
+    $('.paygw-paymob-error').show();
+    $('.paygw-paymob-error').fadeOut(10000);
+}
+/**
+ * Hide the error message
+ */
+function hideError() {
+    $('.paygw-paymob-error').text('');
+    $('.paygw-paymob-error').hide();
+}
 /**
  * Call ajax request to retrieve required data.
  */
 function callAjax() {
+    hideError();
+
     let publickey = $('#id_public_key').val();
     let privatekey = $('#id_private_key').val();
     let legacy = $('input[name="legacy"]').is(':checked');
@@ -40,9 +59,9 @@ function callAjax() {
     if ($('#id_apikey').val().length === 0
         || publickey.length === 0
         || privatekey.length === 0) {
-        error('Please provide Paymob API, public and secret keys');
+            showError('Please provide Paymob API, public and secret keys');
     } else if (!legacy && (publickey.length < 20 || privatekey.length < 20)) {
-        error('Please provide correct public and secret keys or choose legacy mode');
+        showError('Please provide correct public and secret keys or choose legacy mode');
     } else {
         $(".paygw-paymob-loader").css('display', 'block');
         let post = Ajax.call([{
@@ -101,7 +120,7 @@ function callAjax() {
             $('#paygw-paymob-valid').css('display', 'inline-block');
         }).fail(function(error) {
                 $(".paygw-paymob-loader").fadeOut(10);
-                error(error.message);
+                showError(error.message);
                 $(".paygw-paymob-failed_load").css('display', 'block');
                 $(".paygw-paymob-failed_load").fadeOut(500);
                 $('#paygw-paymob-not-valid').css('display', 'inline-block');
@@ -131,10 +150,10 @@ export const init = ($data) => {
 
     $(".paygw-paymob-loader").fadeOut(1500, function() {
         $('#id_integration_ids_select').html('');
-        var integrationHidden = ajaxObject.integrationHidden.split(",");
+        var integrationHidden = ajaxObject.integration_hidden.split(",");
         $('#id_hmac').val(ajaxObject.hmac_hidden);
 
-        if (ajaxObject.integrationHidden.length > 0) {
+        if (ajaxObject.integration_hidden.length > 0) {
             $.each(integrationHidden, function(i, avId) {
                 var selected = '';
                 if (avId !== '') {
@@ -164,11 +183,3 @@ export const init = ($data) => {
     });
 };
 
-/**
- * @param {string} msg
- */
-function error(msg) {
-    $('.paygw-paymob-error').html = msg;
-    $('.paygw-paymob-error').show();
-    $('.paygw-paymob-error').fadeOut(3500);
-}

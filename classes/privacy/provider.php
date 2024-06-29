@@ -38,16 +38,6 @@ use core_privacy\local\metadata\collection;
 class provider implements \core_privacy\local\metadata\provider, paygw_provider {
 
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
-     *
-     * @return  string
-     */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
-    }
-
-    /**
      * Returns meta data about this system.
      * @param collection $collection
      * @return collection
@@ -63,8 +53,9 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
         ], 'privacy:metadata:paygw_paymob');
 
         $collection->add_database_table('paygw_paymob_orders', [
-            'userid' => 'privacy:metadata:paygw_paymob:userid',
-        ]);
+            'userid' => 'privacy:metadata:paygw_paymob_orders:userid',
+            'pm_orderid' => 'privacy:metadata:paygw_paymob_orders:pm_orderid',
+        ], 'privacy:metadata:paygw_paymob_orders');
         return $collection;
     }
     /**
@@ -85,7 +76,7 @@ class provider implements \core_privacy\local\metadata\provider, paygw_provider 
         $record = $DB->get_record('paygw_paymob_orders', $conditions);
 
         $data = (object)[
-            'orderid' => $record->pm_orderid,
+            'pm_orderid' => $record->pm_orderid,
         ];
         writer::with_context($context)->export_data(
             $subcontext,
