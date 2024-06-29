@@ -26,6 +26,7 @@ namespace paygw_paymob;
 
 /**
  * All function needed to perform an API workflow with Paymob.
+ *
  * This now is to be used for legacy API only.
  */
 class legacy_requester {
