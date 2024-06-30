@@ -50,12 +50,18 @@ function getUrl(component, paymentArea, itemId, description) {
 }
 
 export const process = async(component, paymentArea, itemId, description) => {
-    return getUrl(component, paymentArea, itemId, description).then((ajaxdata) => {
+    return getUrl(component, paymentArea, itemId, description).then(async(ajaxdata) => {
         if (ajaxdata.success && ajaxdata.url) {
             window.location.href = ajaxdata.url;
             return new Promise(() => null);
         } else {
-            return get_string('error', 'paygw_paymob', ajaxdata.error);
+            let msg;
+            if (ajaxdata.error) {
+                msg = ajaxdata.error;
+            } else {
+                msg = await get_string('error', 'paygw_paymob', ajaxdata.error);
+            }
+            throw new Error(msg);
         }
     });
 };

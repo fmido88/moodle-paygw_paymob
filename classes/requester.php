@@ -247,8 +247,9 @@ class requester {
         $request = $this->request('/api/ecommerce/integrations', $data, 'get');
 
         if (!empty($request->results)) {
+
             $integrationids = [];
-            foreach ($request->results as $integration) {
+            foreach ($request->results as $key => $integration) {
                 if (empty($integration->id)) {
                     continue;
                 }
@@ -262,7 +263,10 @@ class requester {
                     $type = 'Wallet';
                 }
 
-                if (false == $integration->is_standalone
+                $online = $integration->integration_type == 'online_new';
+                $online = $online || ($integration->integration_type == 'online');
+
+                if ($online && !$integration->is_standalone
                     && ($integration->is_live == $islive || $nomode)) {
 
                     $integrationids[$integration->id] = [
@@ -274,6 +278,11 @@ class requester {
                     ];
                 }
             }
+
+            if (empty($integrationids)) {
+                self::debug('There is no available valid integrations');
+            }
+
             return $integrationids;
         }
 

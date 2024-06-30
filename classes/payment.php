@@ -172,7 +172,7 @@ class payment extends requester {
             $this->order->set_pm_orderid($intention->id, false);
             $this->order->update_status('intended');
         } else {
-            $status['message'] = isset($intention->code) ? $intention->code : 'Something went wrong';
+            $status['message'] = $intention->code ?? json_decode($intention);
         }
 
         return $status;

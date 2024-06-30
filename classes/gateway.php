@@ -211,7 +211,11 @@ class gateway extends \core_payment\gateway {
         $data->integration_hidden = $config->integration_ids_hidden ?? $data->integration_hidden;
         $data->hmac_hidden = $config->hmac_hidden ?? $data->hmac_hidden;
 
-        $data->integration_id = json_decode($data->integration_id);
+        if (empty($data->integration_id)) {
+            $data->integration_id = [];
+        } else {
+            $data->integration_id = json_decode($data->integration_id);
+        }
 
         return $data;
     }

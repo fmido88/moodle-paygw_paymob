@@ -17,6 +17,10 @@
 namespace paygw_paymob\ajax;
 use paygw_paymob\requester;
 
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
+require_once($CFG->libdir . '/externallib.php');
+
 /**
  * Class admin
  *

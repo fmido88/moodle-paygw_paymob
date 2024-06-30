@@ -15,8 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace paygw_paymob\ajax;
-
 use paygw_paymob\payment;
+
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
+require_once($CFG->libdir . '/externallib.php');
 /**
  * Class transaction
  *
@@ -47,6 +50,7 @@ class transaction extends \external_api {
      * @return array
      */
     public static function get_payment_url($component, $paymentarea, $itemid, $description) {
+        global $CFG;
         $params = [
             'component'   => $component,
             'paymentarea' => $paymentarea,
@@ -57,8 +61,21 @@ class transaction extends \external_api {
 
         require_login(null, false);
 
-        $payment = new payment($params['component'], $params['paymentarea'], $params['itemid'], $params['description']);
-        return $payment->get_intention_url();
+        try {
+            $payment = new payment($params['component'], $params['paymentarea'], $params['itemid'], $params['description']);
+            $data = $payment->get_intention_url();
+        } catch (\moodle_exception $e) {
+            $error = $e->getCode() . "\n" . $e->getMessage();
+            if ((int)$CFG->debug & DEBUG_DEVELOPER === DEBUG_DEVELOPER) {
+                $error .= "\n" . $e->getTraceAsString();
+            }
+            $data = [
+                'success' => false,
+                'error'   => $error,
+            ];
+        }
+
+        return $data;
     }
     /**
      * Returned data from function get_payment_url()

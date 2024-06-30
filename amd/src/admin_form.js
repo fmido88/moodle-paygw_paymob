@@ -75,7 +75,6 @@ function callAjax() {
             }]);
 
         post[0].done(function(data) {
-
             $('input[name="hmac"]').val(data.hmac);
             $('input[name="hmac_hidden"]').val(data.hmac);
             var html = '';
@@ -88,10 +87,8 @@ function callAjax() {
                          + " (" + integration.type + " : " + integration.currency + " )";
                 ids = ids + text + ',';
                 let selected = '';
-                if (ajaxObject.integration_id.length > 0) {
-                    $.each(
-                        ajaxObject.integration_id,
-                        function(ii, id) {
+                if (ajaxObject.integration_id && ajaxObject.integration_id.length > 0) {
+                    $.each(ajaxObject.integration_id, function(ii, id) {
                             if (integration.id === id || parseInt(integration.id) === parseInt(id)) {
                                 selected = 'selected';
                             }
@@ -131,8 +128,8 @@ function callAjax() {
     }
 }
 
-export const init = ($data) => {
-    ajaxObject = JSON.parse($data);
+export const init = (data) => {
+    ajaxObject = JSON.parse(data);
 
     $('#cpicon').on("click", function() {
             var copyText = document.getElementById('cburl').innerText;
