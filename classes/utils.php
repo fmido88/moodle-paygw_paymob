@@ -53,7 +53,7 @@ class utils {
                     }
 
                     $output[$id] = (object)[
-                        'id'       => $parts[0],
+                        'id'       => $id,
                         'type'     => trim($type),
                         'name'     => $name,
                         'currency' => trim(substr($parts[2], strpos($parts[2], '(') + 1, -2)),
@@ -84,6 +84,7 @@ class utils {
             if (!in_array($key, $ids)
                 || $object->currency !== $currency) {
                 unset($integrations[$key]);
+                continue;
             }
 
             $type = strtolower($object->type);
@@ -91,6 +92,7 @@ class utils {
                 $out[$type] = $object->id;
             }
         }
+
         return $out;
     }
     /**
@@ -260,10 +262,11 @@ class utils {
 
     /**
      * Get the the order status from the transaction object.
-     * @param array $obj
+     * @param array|object $obj
      * @return string
      */
     public static function get_order_status($obj) {
+        $obj = (array)$obj;
         $success  = $obj['success'] ?? false;
         $voided   = $obj['is_voided'] ?? false;
         $refunded = $obj['is_refunded'] ?? false;
@@ -294,6 +297,11 @@ class utils {
                 return 'refund';
             }
         }
+
+        if (!$success && !$error) {
+            return 'pending';
+        }
+
         return 'failed';
     }
 

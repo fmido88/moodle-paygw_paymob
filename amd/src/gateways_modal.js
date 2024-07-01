@@ -25,6 +25,7 @@ import prefetch from 'core/prefetch';
 // eslint-disable-next-line camelcase
 import {get_string} from 'core/str';
 import Ajax from 'core/ajax';
+import $ from 'jquery';
 
 prefetch.prefetchStrings('paygw_paymob', ['error']);
 /**
@@ -38,7 +39,7 @@ prefetch.prefetchStrings('paygw_paymob', ['error']);
  */
 function getUrl(component, paymentArea, itemId, description) {
     let requests = Ajax.call([{
-        methodname: 'payge_paymob_get_payment_url',
+        methodname: 'paygw_paymob_get_payment_url',
         args: {
             component: component,
             paymentarea: paymentArea,
@@ -50,6 +51,8 @@ function getUrl(component, paymentArea, itemId, description) {
 }
 
 export const process = async(component, paymentArea, itemId, description) => {
+    const btn = $('button[data-action="proceed"]');
+    btn.prop("disabled", true);
     return getUrl(component, paymentArea, itemId, description).then(async(ajaxdata) => {
         if (ajaxdata.success && ajaxdata.url) {
             window.location.href = ajaxdata.url;
@@ -61,6 +64,7 @@ export const process = async(component, paymentArea, itemId, description) => {
             } else {
                 msg = await get_string('error', 'paygw_paymob', ajaxdata.error);
             }
+            btn.prop("disabled", false);
             throw new Error(msg);
         }
     });

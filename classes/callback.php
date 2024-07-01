@@ -68,6 +68,7 @@ class callback {
         } else if (!empty($obj['order_id'])) {
             $pmorderid = $obj['order_id'];
         }
+
         if (isset($pmorderid)) {
             $order = order::instance_form_pm_orderid($pmorderid);
         } else {
@@ -77,32 +78,22 @@ class callback {
         }
 
         $config = $order->get_gateway_config();
-        $legacy = (bool)($config->legacy ?? false);
-        if ($legacy) {
-            global $CFG;
-            include_once("$CFG->dirroot/payment/gateway/paymob/callback_leg.php");
-            return;
-        }
 
         $hmackey = $config->hmac_hidden;
         if (security::verify_hmac($hmackey, $jsondata, null, security::filter_var('hmac', 'REQUEST'))) {
 
-            $order->verify_order_changeable();
-
-            $integrationid = $obj['integration_id'];
-            $type          = $obj['source_data']['type'];
-            $subtype       = $obj['source_data']['sub_type'];
-            $transaction   = $obj['id'];
-            $paymobid      = $obj['order']['id'];
-
-            $order->add_order_note_data($integrationid, $type, $subtype, $transaction, $paymobid);
-
             $status = utils::get_order_status($obj);
+
+            $order->verify_order_changeable(true, $status);
+
             if ($status === 'success') {
                 $order->payment_complete();
             } else {
                 $order->update_status($status);
             }
+            $order->add_note_from_transaction($obj);
+
+            requester::log('order status: '. $status);
             notifications::notify($order, $status);
 
             die("Order updated: $orderid");
@@ -121,7 +112,7 @@ class callback {
 
         $order = new order($orderid);
 
-        $orderintensionid = $order->get_pm_orderid();
+        $orderintensionid = $order->get_intention_id();
         $orderamount      = $order->get_amount_cents();
 
         if ($orderintensionid != $cleaned['intention']['id']) {
@@ -149,23 +140,19 @@ class callback {
             die("can not verify order: $orderid");
         }
 
-        $order->verify_order_changeable();
-
         if (!empty($cleaned['transaction'])) {
-            $trans         = $cleaned['transaction'];
-            $transaction   = $trans['id'];
-            $integrationid = $trans['integration_id'];
-            $type          = $trans['source_data']['type'];
-            $subtype       = $trans['source_data']['sub_type'];
-            $paymobid      = $trans['order']['id'];
+            $trans = $cleaned['transaction'];
 
             $status = utils::get_order_status($trans);
-            $order->add_order_note_data($integrationid, $type, $subtype, $transaction, $paymobid);
+            requester::log($cleaned);
+            $order->verify_order_changeable(true, $status);
+
             if ($status === 'success') {
                 $order->payment_complete();
             } else {
                 $order->update_status($status);
             }
+            $order->add_note_from_transaction($trans);
 
             die("Order updated: $orderid");
         }
@@ -185,12 +172,6 @@ class callback {
         }
 
         $config = $order->get_gateway_config();
-        $legacy = (bool)($config->legacy ?? false);
-        if ($legacy) {
-            global $CFG;
-            include_once("$CFG->dirroot/payment/gateway/paymob/callback_leg.php");
-            return;
-        }
 
         if (!security::verify_hmac($config->hmac_hidden, $_GET)) {
             redirect(new \moodle_url('/'), get_string('verification_failed', 'paygw_paymob'), null, 'error');
@@ -201,32 +182,38 @@ class callback {
         $type          = security::filter_var('source_data_type');
         $subtype       = security::filter_var('source_data_sub_type' );
         $id            = security::filter_var('id');
-
+        $gatewaymsg    = security::filter_var('data_message') ?? '';
         $url = $order->get_redirect_url();
 
         $obj = security::clean_param('', $_GET);
         $status = utils::get_order_status($obj);
+        $changeable = $order->verify_order_changeable(false, $status);
+
         if ($status === 'success') {
-            if (!$order->verify_order_changeable(false)) {
+            if (!$changeable) {
                 redirect($url, get_string('payment_processing', 'paygw_paymob'), null, 'success');
                 exit();
             }
 
-            $order->add_order_note_data($integrationid, $type, $subtype, $id, $paymoborder, security::filter_var('data_message'));
             $order->update_status('processing');
-
             $msg = get_string('paymentresponse', 'paygw_paymob', $order->get_status());
             $type = \core\notification::SUCCESS;
-            redirect($url, $msg, null, $type);
+
+        } else if ($status !== 'failed') {
+
+            $order->update_status($status);
+            $msg = get_string('paymentcancelled', 'paygw_paymob') . ": " .$gatewaymsg;
+            $type = \core\notification::INFO;
+
         } else {
-            $gatewayerror = security::filter_var('data_message');
+
             $order->update_status('failed');
-            $order->add_order_note_data($integrationid, $type, $subtype, $id, $paymoborder, $gatewayerror);
-            $msg = get_string('paymentcancelled', 'paygw_paymob', $gatewayerror);
+            $msg = get_string('paymentcancelled', 'paygw_paymob', $gatewaymsg);
             $type = \core\notification::ERROR;
-            redirect($url, $msg, null, $type);
         }
 
+        $order->add_order_note_data($integrationid, $type, $subtype, $id, $paymoborder, $gatewaymsg);
+        redirect($url, $msg, null, $type);
         exit();
     }
 }

@@ -84,6 +84,19 @@ function xmldb_paygw_paymob_upgrade($oldversion) {
         // Paymob savepoint reached.
         upgrade_plugin_savepoint(true, 2024062602, 'paygw', 'paymob');
     }
+    if ($oldversion < 2024063000) {
 
+        // Define field integrationid to be added to paygw_paymob_order_notes.
+        $table = new xmldb_table('paygw_paymob_order_notes');
+        $field = new xmldb_field('integrationid', XMLDB_TYPE_INTEGER, '20', null, null, null, null, 'subtype');
+
+        // Conditionally launch add field integrationid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Paymob savepoint reached.
+        upgrade_plugin_savepoint(true, 2024063000, 'paygw', 'paymob');
+    }
     return true;
 }

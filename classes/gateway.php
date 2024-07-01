@@ -281,6 +281,18 @@ class gateway extends \core_payment\gateway {
             if (empty($data->integration_ids)) {
                 $errors['integration_ids_select'] = get_string('atleast_one_integration', 'paygw_paymob');
                 $ok = false;
+            } else {
+                $integrationids = json_decode($data->integration_ids);
+                $all = utils::get_integration_ids_from_string($data->integration_ids_hidden, true);
+                $types = [];
+                foreach ($integrationids as $id) {
+                    $types[] = $all[$id]->type;
+                }
+                if (count($types) > count(array_unique($types))) {
+                    $errors['integration_ids_select'] = get_string('no_same_type_integrations', 'paygw_paymob');
+                    $ok = false;
+                }
+
             }
 
             if (!$ok) {

@@ -31,3 +31,9 @@ if ($ADMIN->fulltree) {
 
     \core_payment\helper::add_common_gateway_settings($settings, 'paygw_paymob');
 }
+
+$reporturl = new moodle_url("/payment/gateway/paymob/report.php");
+$report = new admin_externalpage('paygw_payment_report',
+                                get_string('orders_report', 'paygw_paymob'),
+                                $reporturl, 'paygw/paymob:ordersview');
+$ADMIN->add('reports', $report);

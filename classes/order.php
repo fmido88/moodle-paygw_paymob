@@ -64,7 +64,7 @@ class order {
     /**
      * @var int
      */
-    protected $timecreated;
+    public $timecreated;
     /**
      * @var int
      */
@@ -172,10 +172,58 @@ class order {
     }
     /**
      * Get paymob orderid.
-     * @return string
+     * @return int|null
      */
     public function get_pm_orderid() {
-        return $this->paymoborderid;
+        if (empty($this->paymoborderid)) {
+            return null;
+        } else if (is_number($this->paymoborderid)) {
+            return (int)$this->paymoborderid;
+        }
+        $notes = $this->get_order_notes();
+        if (empty($notes)) {
+            return null;
+        }
+        return reset($notes)->paymobid;
+    }
+    /**
+     * Return the intention id.
+     * @return string|null
+     */
+    public function get_intention_id() {
+        if (empty($this->paymoborderid)) {
+            return null;
+        }
+        if (!is_number($this->paymoborderid)) {
+            $parts = explode('_', $this->paymoborderid);
+            if (count($parts) >= 3) {
+                return $this->paymoborderid;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the transaction id
+     * There may be many transactions for one order
+     * @param int $return -1 the parent transaction, 1 last one, 0 array of all
+     * @return int|array[int]|null
+     */
+    public function get_transaction_id($return = -1) {
+        $notes = $this->get_order_notes();
+        if (empty($notes)) {
+            return null;
+        }
+        if ($return < 0) {
+            return array_pop($notes)->transid;
+        } else if ($return > 0) {
+            return reset($notes)->transid;
+        }
+        $ids = [];
+        foreach ($notes as $note) {
+            $ids[] = $note->transid;
+        }
+        return $ids;
     }
     /**
      * Return the id of the user.
@@ -310,14 +358,26 @@ class order {
     /**
      * Verify than we can change the order status
      * @param bool $throw throw error on fail
+     * @param string $status callback status
      * @return bool
      */
-    public function verify_order_changeable($throw = true) {
+    public function verify_order_changeable($throw = true, $status = '') {
 
+        // Success only change when void or refund the transaction.
+        if (!empty($status)) {
+            if ($this->status != $status && in_array($status, ['void', 'voided', 'refund', 'refunded'])) {
+                return true;
+            }
+        }
+
+        // Don't change success, voided or refunded.
         $changeable = ['pending', 'failed', 'on-hold', 'intended', 'processing'];
-        if (!in_array($this->status, $changeable)) {
+        if (!in_array($this->status, $changeable) || $this->status == $status) {
             if ($throw) {
-                throw new \moodle_exception('order_unchangeable', 'paygw_paymob', '', $this->status);
+                if ($status === 'success') {
+                    die("Cannot change order status from $this->status .' to '. $status");
+                }
+                throw new \moodle_exception('order_unchangeable', 'paygw_paymob', '', $this->status .' to '. $status);
             }
             return false;
         }
@@ -338,17 +398,19 @@ class order {
                                 'paymob');
 
         $this->update_status('success', false);
-        $this->set_paymentid($paymentid, false);
-
-        $this->update_record();
+        $this->set_paymentid($paymentid);
 
         helper::deliver_order($this->component,
                               $this->paymentarea,
                               $this->itemid,
                               $paymentid,
                               $this->userid);
+
+        requester::log('order delivered');
         // Notify user.
-        notifications::notify($this, 'success_completed');
+        notifications::notify($this, 'success');
+
+        requester::log('order notified');
     }
 
     /**
@@ -378,6 +440,25 @@ class order {
     }
 
     /**
+     * Same as add_order_note_data but only pass the array of transaction
+     * data
+     * @param array $obj
+     * @return int
+     */
+    public function add_note_from_transaction($obj) {
+        $obj = (array)$obj;
+        $obj['source_data'] = (array)$obj['source_data'];
+        $obj['order'] = (array)$obj['order'];
+
+        $integrationid = $obj['integration_id'];
+        $type          = $obj['source_data']['type'];
+        $subtype       = $obj['source_data']['sub_type'];
+        $transid       = $obj['id'];
+        $paymobid      = $obj['order']['id'];
+        $extra         = $obj['data_message'] ?? $obj['message'] ?? '';
+        return $this->add_order_note_data($integrationid, $type, $subtype, $transid, $paymobid, $extra);
+    }
+    /**
      * Get all notes for this order
      * @return array[\stdClass]
      */
@@ -397,12 +478,13 @@ class order {
         $url = utils::get_api_url($this->get_gateway_config()->public_key);
         foreach ($notes as $note) {
             $tempdata = [
-                'integrationid' => $note->integrationid,
-                'type'          => $note->type,
-                'subtype'       => $note->subtype,
-                'transaction'   => $$note->transaction,
-                'paymobid'      => $note->paymobid,
-                'url'           => $url,
+                'integrationid'   => $note->integrationid,
+                'type'            => $note->type,
+                'subtype'         => $note->subtype,
+                'transaction'     => $note->transid,
+                'paymobid'        => $note->paymobid,
+                'responsemessage' => $note->extra ?? '',
+                'url'             => $url,
             ];
             $note->html = $OUTPUT->render_from_template('paygw_paymob/order_note', $tempdata);
         }

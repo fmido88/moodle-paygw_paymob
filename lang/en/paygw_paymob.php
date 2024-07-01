@@ -37,6 +37,8 @@ $string['IntegrationIDwallet_help'] = 'mobile wallets integration ID';
 $string['abouttopay'] = 'You are about to pay for ';
 $string['admin_help'] = 'Please, ensure using the secret and public keys that are exists in Paymob <a href="https://accept.paymob.com/portal2/en/settings">merchant account. </a><br/>For testing purposes, you can use secret and public test keys that exist in the same account';
 $string['aman_key'] = 'Reference key for aman or masary';
+$string['amount'] = 'Amount';
+$string['amountcents'] = 'Amount (in cents)';
 $string['apikey'] = 'API Key';
 $string['apikey_help'] = 'API Key';
 $string['atleast_one_integration'] = 'You must at least select one integration';
@@ -46,6 +48,8 @@ $string['callback'] = 'Callback URL';
 $string['callback_help'] = 'Copy this and put it in callback URLs at your paymob account';
 $string['card_deleted'] = 'The selected card has been successfully deleted.';
 $string['choosemethod'] = 'Choose Your proper method';
+$string['component'] = 'component';
+$string['currency'] = 'Currency';
 
 
 $string['deletecard'] = 'delete card';
@@ -70,10 +74,14 @@ $string['hmac_secret_help'] = 'HMAC secret';
 
 $string['iframe_id'] = 'Iframe ID';
 $string['iframe_id_help'] = 'Iframe ID for card payments only in legacy (old) accounts, not required in integrations after 15 june 2024';
+$string['inquiry'] = 'Inquiry';
+$string['inquirydata'] = 'Inquiry Data';
+$string['integration_id'] = 'Integration ID';
 $string['integration_ids'] = 'Integrations ids';
 $string['invalid_discount'] = 'Invalid discount value';
 $string['invalid_key'] = 'Invalid key';
 $string['invalidmethod'] = 'Invalid Method or Data, please try again';
+$string['itemid'] = 'Item id';
 
 
 $string['kiosk_bill_reference'] = 'Your Aman (or Masary) bill reference is';
@@ -83,6 +91,7 @@ $string['kiosk_process_help'] = 'To pay, Please go to the nearest Aman or Masary
 $string['legacy'] = 'Legacy account';
 $string['legacy_help'] = 'Legacy mean integration ids created before june 2024 if you had older version of plugin you should select it or contact paymob to upgrade your integrations';
 $string['legacy_warning'] = 'DON\'T select the legacy option until you completely sure that your integration are old ones or you had an old version of this plugin and was working correctly.';
+$string['localorderid'] = 'Local order id';
 $string['low_payment'] = 'Sorry the payment is not allowed due to the low payment value, the minimum value allowed to use this method is {$a}';
 
 
@@ -108,24 +117,41 @@ $string['minimum_allowed_help'] = 'Users cannot use this gateway until the value
 
 
 $string['no_payment_integration'] = 'No valid payment integrations for this payment gateway, please contact the administrator.';
+$string['no_same_type_integrations'] = 'Cannot select more than one integration of the same kind (ex. don\'t select to integrations of type card)';
 $string['not_same_country'] = 'Not the same country';
 $string['not_same_mode'] = 'The keys are not in the same mode, both must be test or live';
+$string['notify_declined'] = 'The transaction declined';
+$string['notify_downpayment'] = 'We received the down payment';
+$string['notify_error'] = 'Error occurred in the transaction.';
+$string['notify_pendig'] = 'The payment is pending and may need action';
+$string['notify_processing'] = 'Your payment is processing';
+$string['notify_refunded'] = 'The amount of {$a} is refunded successfully';
+$string['notify_success'] = 'Your payment is successful';
+$string['notify_voided'] = 'The transaction of id: {$a} is voided successfully';
 
 
 $string['order_unchangeable'] = 'can not change status of order: {$a}';
+$string['orders_report'] = 'Paymob orders report';
 
 
+$string['paidamountcents'] = 'Paid Amount (in cents)';
 $string['payment_attention'] = 'Attention required about you last payment {$a}';
 $string['payment_attention_receipt'] = 'This is the receipt url regarding your last transaction {$a->url}';
 $string['payment_notification'] = 'You have a transaction notification';
 $string['payment_processing'] = 'Payment in process or pending';
 $string['payment_receipt_url'] = 'Click here for the receipt';
+$string['paymentarea'] = 'Payment area';
 $string['paymentcancelled'] = 'The payment is declined or cancelled. </br> reason: {$a}';
+$string['paymentid'] = 'Payment id (payment table)';
+$string['paymentmethod'] = 'Payment Method';
 $string['paymentmethods'] = 'Payment Methods';
 $string['paymentresponse'] = 'Your payment is in state of {$a}';
 $string['paymentsuccessful'] = 'Payment successful';
+$string['paymob:ordersview'] = 'View paymob orders';
+$string['paymob:void_refund'] = 'Void or refund paymob transactions';
 $string['pluginname'] = 'Paymob payment';
 $string['pluginname_desc'] = 'Using Accept payment (by paymob) to receive transactions from moodle website';
+$string['pm_orderid'] = 'Paymob order id';
 $string['privacy:metadata:paygw_paymob'] = 'In order to perform a successful transaction, Paymob will receive various metadata about the user.';
 $string['privacy:metadata:paygw_paymob:city'] = 'User\'s city will be sent to Paymob upon any transactions.';
 $string['privacy:metadata:paygw_paymob:country'] = 'User\'s country will be sent to Paymob upon any transactions.';
@@ -133,16 +159,33 @@ $string['privacy:metadata:paygw_paymob:email'] = 'User\'s email will be sent to 
 $string['privacy:metadata:paygw_paymob:firstname'] = 'User\'s first name will be sent to Paymob upon any transactions.';
 $string['privacy:metadata:paygw_paymob:lastname'] = 'User\'s last name will be sent to Paymob upon any transactions.';
 $string['privacy:metadata:paygw_paymob:phone'] = 'User\'s phone number will be sent to Paymob upon any transactions, this should be a valid number or it will return an error.';
+$string['privacy:metadata:paygw_paymob_orders'] = 'Orders details by paymob payment gateway';
+$string['privacy:metadata:paygw_paymob_orders:pm_orderid'] = 'The paymob order id';
+$string['privacy:metadata:paygw_paymob_orders:userid'] = 'The user id';
 $string['private_key'] = 'Private (secret) key';
 $string['public_key'] = 'Public key';
 
 
+$string['receiptno'] = 'Receipt No';
 $string['redirect'] = 'Redirecting...';
+$string['refund'] = 'Refund';
+$string['refundedamountcents'] = 'Refunded Amount (in cents)';
+$string['refunding_failed'] = 'Refunding process failed';
+$string['refunding_status'] = 'Refunding status';
+$string['refunding_successfully'] = 'Transaction refunded successfully';
+$string['response_message'] = 'Response message';
 
 
 $string['savedcardsnotify'] = 'Welcome {$a}, looks like you have saved cards please select which to use or you may use a new one.';
 $string['somethingwrong'] = 'Something went wrong. Please try again later and if the problem still persist, contact support.';
+$string['status'] = 'Status';
 $string['success_continue'] = 'After making sure of successful payment.. Click here.';
+
+
+$string['timemodified'] = 'Time modified';
+$string['timeupdated'] = 'Time Updated';
+$string['transaction_inquiry'] = 'Transaction inquiry';
+$string['transactionid'] = 'Transaction ID';
 
 
 $string['unsupportedcountry'] = 'Unsupported country in the key';
@@ -150,6 +193,10 @@ $string['usenewcard'] = 'Use another card';
 
 
 $string['verification_failed'] = 'Failed to verify data, I seem you are trying to access wrong data';
+$string['void'] = 'Void';
+$string['voided_failed'] = 'Voiding process failed';
+$string['voided_successfully'] = 'Transaction voided successfully';
+$string['voiding_status'] = 'Voiding status';
 
 
 $string['wallet_phone_number'] = 'Wallet Phone Number';

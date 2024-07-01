@@ -27,6 +27,10 @@ use paygw_paymob\notifications;
 use paygw_paymob\security;
 use paygw_paymob\order;
 
+// This file is just a reference for old callback process
+// Adding moodle internal check will prevent any access for the file.
+defined('MOODLE_INTERNAL') || die();
+require_admin();
 // Does not require login in server side transaction process callback.
 // But it is required in client side transaction response callback.
 require_once(__DIR__ . '/../../../config.php');
@@ -95,17 +99,9 @@ $url = $order->get_redirect_url();
 if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($type == 'TRANSACTION') {
-
+            $status = paygw_paymob\utils::get_order_status($obj);
             // Successful payment.
-            if (
-                $obj['success'] === true &&
-                $obj['is_voided'] === false &&
-                $obj['is_refunded'] === false &&
-                $obj['pending'] === false &&
-                $obj['is_void'] === false &&
-                $obj['is_refund'] === false &&
-                $obj['error_occured'] === false
-            ) {
+            if ($status === 'success') {
 
 
                 // Check if there is a receipt from paymob.
@@ -125,34 +121,19 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
                     notifications::notify($order, 'downpayment');
                 }
 
+                $order->verify_order_changeable(true, $status);
                 $order->payment_complete();
-                // May be we don't need a redirection as this method is server side not user side.
-                exit(get_string('paymentsuccessful', 'paygw_paymob'));
 
-            } else if ( // Refunded payment.
-                $obj['success'] === true &&
-                $obj['is_refunded'] === true &&
-                $obj['is_voided'] === false &&
-                $obj['pending'] === false &&
-                $obj['is_void'] === false &&
-                $obj['is_refund'] === false
-            ) {
+            } else if ($status === 'refunded') {
 
                 $order->update_status('refunded');
-                // Notify user.
                 notifications::notify($order, 'refunded');
-            } else if ( // Voided payment (cancelled) by vender or merchant.
-                $obj['success'] === true &&
-                $obj['is_voided'] === true &&
-                $obj['is_refunded'] === false &&
-                $obj['pending'] === false &&
-                $obj['is_void'] === false &&
-                $obj['is_refund'] === false
-            ) {
+
+            } else if ($status === 'voided') {
 
                 $order->update_status('voided');
-                // Notify user that the transaction is voided.
                 notifications::notify($order, 'voided');
+
             } else if ( // Pending payments, This means that the user didn't complete it yet.
                 $obj['success'] === false &&
                 $obj['is_voided'] === false &&
@@ -162,9 +143,11 @@ if (security::verify_legacy_hmac($hmacsecret, $jsondata, $type)) {
             ) {
 
                 $order->update_status('pending');
-                // Notify user that the transaction still pending and need his action.
                 notifications::notify($order, 'pending');
+
             }
+
+            $order->add_note_from_transaction($obj);
 
             die("Order updated: $orderid");
         } else if ($type == 'TOKEN') {

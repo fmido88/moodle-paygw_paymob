@@ -24,11 +24,13 @@
     }
 }}
 <h3>{{header}}</h3>
-<br/>Payment Method ID: {{integrationid}} 
-<br/>Transaction done by: {{type}} / {{subtype}}
-<br/>Transaction ID:  <b style='color:DodgerBlue;'>{{transaction}}</b>
-<br/>Order ID: <b style='color:DodgerBlue;'>{{paymobid}}</b>
-<br/><a href='{{url}}portal2/en/transactions' target='_blank'>Visit Paymob Dashboard</a>
-{{#extra}}
-<br/>{{extra}}
-{{/extra}}
+<ul>
+    <li>{{#str}} integration_id, paygw_paymob {{/str}}: {{integrationid}}</li>
+    <li>{{#str}} paymentmethod, paygw_paymob{{/str}} {{type}} / {{subtype}}</li>
+    <li>{{#str}} transactionid, paygw_paymob{{/str}}: <b style='color:DodgerBlue;'>{{transaction}}</b></li>
+    <li>{{#str}} pm_orderid, paygw_paymob {{/str}}:<b style='color:DodgerBlue;'>{{paymobid}}</b></li>
+    {{#responsemessage}}
+    <li>{{#str}}response_message, paygw_paymob{{/str}}: {{responsemessage}}</li>
+    {{/responsemessage}}
+</ul>
+<a href='{{url}}portal2/en/transactions' target='_blank'>Visit Paymob Dashboard</a>

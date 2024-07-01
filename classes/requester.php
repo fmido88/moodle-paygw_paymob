@@ -78,7 +78,7 @@ class requester {
      * 'pay-token'       => Pay with saved token,
      * 'payment-links'   => create payment link,
      */
-    private const ACTIONS = [
+    protected const ACTIONS = [
         'refund'          => '/api/acceptance/void_refund/refund',
         'void'            => '/api/acceptance/void_refund/void',
         'auth'            => '/api/auth/tokens',
@@ -110,9 +110,6 @@ class requester {
 
         $this->country = utils::get_country_code($this->privatekey);
 
-        if (empty($this->authtoken)) {
-            $this->authtoken = $this->request_token();
-        }
         $this->callbackurl = new \moodle_url("/payment/gateway/paymob/callback.php");
     }
 
@@ -134,22 +131,32 @@ class requester {
      * @param string $action
      * @param array $data
      * @param string $method post or get
+     * @param string $authheader override the auth header
      * @return object|string object of returned data or string on error.
      */
-    protected function request($action, $data = [], $method = "post") {
+    protected function request($action, $data = [], $method = "post", $authheader = null) {
         global $CFG;
         require_once($CFG->libdir."/filelib.php");
+        $method = strtolower($method);
+
         $curl = new \curl();
 
-        $url = $this->get_api_url() . $action;
+        if (array_key_exists($action, self::ACTIONS)) {
+            $action = self::ACTIONS[$action];
+        }
 
+        $url = $this->get_api_url() . $action;
         $options = [
             'url'            => $url,
             'returntransfer' => true,
             'failonerror'    => false,
         ];
+
         $options['httpheader'] = ['Content-Type: application/json'];
-        if (strtolower($method) == 'post') {
+
+        if ($authheader) {
+            $options['httpheader'][] = $authheader;
+        } else if ($method == 'post') {
             $options['httpheader'][] = 'Authorization: Token ' . $this->privatekey;
         } else {
             $options['httpheader'][] = 'Authorization: Bearer ' . $this->get_auth_token();
@@ -297,7 +304,7 @@ class requester {
      * @throws \moodle_exception
      * @return void
      */
-    private static function debug($request, $msg = '') {
+    protected static function debug($request, $msg = '') {
         $responseerror = '';
         if (is_string($request)) {
             $responseerror .= $request;
@@ -311,5 +318,14 @@ class requester {
             throw new \moodle_exception("error in response: \n".$responseerror);
         }
         debugging($msg . ' ' . $responseerror, DEBUG_DEVELOPER);
+    }
+    /**
+     * Log the data for the cases of debugging
+     * @param mixed $data
+     * @return void
+     */
+    public static function log($data) {
+        // Using this for developing only.
+        // Erase any contents in live versions.
     }
 }

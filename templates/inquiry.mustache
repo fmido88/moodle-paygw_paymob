@@ -1,0 +1,42 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template paygw_paymob/inquiry
+
+    TODO describe template inquiry
+
+    Example context (json):
+    {
+    }
+}}
+<div class="inquiry-data">
+    <h2>{{#str}} inquirydata, paygw_paymob {{/str}}</h2>
+    <ul>
+        <li><strong>{{#str}} localorderid, paygw_paymob {{/str}}:</strong> {{id}}</li>
+        <li><strong>{{#str}} pm_orderid, paygw_paymob {{/str}}:</strong> {{pm_orderid}}</li>
+        <li><strong>{{#str}} status, paygw_paymob {{/str}}:</strong> {{status}}</li>
+        <li><strong>{{#str}} amountcents, paygw_paymob {{/str}}:</strong> {{amount_cents}}</li>
+        <li><strong>{{#str}} paidamountcents, paygw_paymob {{/str}}:</strong> {{paid_amount_cents}}</li>
+        <li><strong>{{#str}} refundedamountcents, paygw_paymob {{/str}}:</strong> {{refunded_amount_cents}}</li>
+        <li><strong>{{#str}} receiptno, paygw_paymob {{/str}}:</strong> {{receipt}}</li>
+        <li><strong>{{#str}} currency, paygw_paymob {{/str}}:</strong> {{currency}}</li>
+        <li><strong>{{#str}} paymentmethod, paygw_paymob {{/str}}:</strong> {{payment_method}}</li>
+        <li><strong>{{#str}} message {{/str}}:</strong> {{message}}</li>
+        <li><strong>{{#str}} timecreated {{/str}}:</strong> {{#userdate}}{{timecreated}}, %d %B %Y - %I:%M %p{{/userdate}}</li>
+        <li><strong>{{#str}} timeupdated, paygw_paymob {{/str}}:</strong> {{#userdate}}{{timeupdated}}, , %d %B %Y - %I:%M %p{{/userdate}}</li>
+    </ul>
+</div>

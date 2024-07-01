@@ -80,7 +80,7 @@ class legacy_requester {
         $options = [
             'url'            => self::HOST . $urlpath,
             'returntransfer' => true,
-            'failonerror'    => true,
+            'failonerror'    => false,
             'post'           => true,
             'postfields'     => json_encode($data),
             'httpheader'     => [
@@ -91,16 +91,16 @@ class legacy_requester {
 
         $response = $curl->post(self::HOST.$urlpath, json_encode($data), $options);
         $httpcode = $curl->get_info()['http_code'] ?? 0;
-        $responserawdata = json_decode($response, false);
+        $responsedata = json_decode($response, false);
 
         $curl->cleanopt();
         if ($httpcode != 200 && $httpcode != 201 ) {
             // Endpoint returned an error.
-            debugging("endpoint return error ".$response);
-            return "endpoint return error ".$response;
+            debugging("endpoint return error " . $response);
+            return "endpoint return error: " . $response;
         }
 
-        return $responserawdata;
+        return $responsedata;
     }
 
     /**

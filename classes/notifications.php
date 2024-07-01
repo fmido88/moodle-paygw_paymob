@@ -98,7 +98,7 @@ class notifications {
         $notes = $order->get_order_notes();
         if (!empty($notes)) {
             $note = reset($notes);
-            $a->method = $note->type / $note->subtype;
+            $a->method = $note->type . ' / ' . $note->subtype;
         }
 
         $message = new \core\message\message();
