@@ -87,8 +87,9 @@ function callAjax() {
                          + " (" + integration.type + " : " + integration.currency + " )";
                 ids = ids + text + ',';
                 let selected = '';
-                if (ajaxObject.integration_id && ajaxObject.integration_id.length > 0) {
-                    $.each(ajaxObject.integration_id, function(ii, id) {
+                let shouldSelected = getSelected();
+                if (shouldSelected && shouldSelected.length > 0) {
+                    $.each(shouldSelected, function(ii, id) {
                             if (integration.id === id || parseInt(integration.id) === parseInt(id)) {
                                 selected = 'selected';
                             }
@@ -106,6 +107,7 @@ function callAjax() {
             if (html) {
                 $('#id_integration_ids_select').html(html);
             }
+            saveSelected();
 
             $('input[name="integration_ids"]').val(JSON.stringify(allids));
 
@@ -127,7 +129,38 @@ function callAjax() {
 
     }
 }
+/**
+ * Save the selected integrations to the hidden elements.
+ */
+function saveSelected() {
 
+    var selectedOptions = $('#id_integration_ids_select').find('option:selected');
+
+    var values = $.map(selectedOptions, function(option) {
+        return $(option).val();
+    });
+
+    var valuesString = JSON.stringify(values);
+
+    // Set the value of the input field
+    $('input[name="integration_ids"]').val(valuesString);
+}
+/**
+ * Get the integrations that should be selected.
+ * @returns {Array}
+ */
+function getSelected() {
+    let selected = $('input[name="integration_ids"]').val();
+    if (selected) {
+        return JSON.parse(selected);
+    } else {
+        return [];
+    }
+}
+/**
+ * Initiate payment account configuration page.
+ * @param {String} data In jason form
+ */
 export const init = (data) => {
     ajaxObject = JSON.parse(data);
 
@@ -166,17 +199,6 @@ export const init = (data) => {
             });
         }
     });
-    $('#id_integration_ids_select').on('change', function() {
-        var selectedOptions = $(this).find('option:selected');
-
-        var values = $.map(selectedOptions, function(option) {
-            return $(option).val();
-        });
-
-        var valuesString = JSON.stringify(values);
-
-        // Set the value of the input field
-        $('input[name="integration_ids"]').val(valuesString);
-    });
+    $('#id_integration_ids_select').on('change', saveSelected);
 };
 

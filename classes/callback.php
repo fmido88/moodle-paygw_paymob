@@ -90,11 +90,12 @@ class callback {
                 $order->payment_complete();
             } else {
                 $order->update_status($status);
+                notifications::notify($order, $status);
             }
+
             $order->add_note_from_transaction($obj);
 
             requester::log('order status: '. $status);
-            notifications::notify($order, $status);
 
             die("Order updated: $orderid");
         } else {
@@ -116,10 +117,18 @@ class callback {
         $orderamount      = $order->get_amount_cents();
 
         if ($orderintensionid != $cleaned['intention']['id']) {
+            $error = "intention ID is not matched for order: $orderid, ";
+            $error .= "our intention id: $orderintensionid, ";
+            $error .= "their intention id: " . $cleaned['intention']['id'];
+            requester::log($error);
             die("intention ID is not matched for order: $orderid");
         }
 
         if ($orderamount != $cleaned['intention']['intention_detail']['amount']) {
+            $error = "amount is not matched for order: $orderid, ";
+            $error .= "our amount: $orderamount, ";
+            $error .= "their amount: " . $cleaned['intention']['intention_detail'];
+            requester::log($error);
             die("intension amount are not matched for order : $orderid");
         }
 
@@ -137,6 +146,7 @@ class callback {
                     ]
                 )
         ) {
+            requester::log("can not verify order: $orderid");
             die("can not verify order: $orderid");
         }
 
@@ -156,6 +166,7 @@ class callback {
 
             die("Order updated: $orderid");
         }
+        requester::log('Invalid response.');
         die("Invalid response");
     }
 

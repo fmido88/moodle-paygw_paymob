@@ -28,7 +28,7 @@ class actions extends requester {
      * The order instance
      * @var order
      */
-    private order $order;
+    private \paygw_paymob\order $order;
 
     /**
      * Ready for payment actions.
