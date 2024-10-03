@@ -181,7 +181,7 @@ class notifications {
     public static function send_receipt_url($userid, $fee, $orderid, $url) {
         global $DB;
 
-        $item = $DB->get_record('paygw_paymob', ['pm_orderid' => $orderid]);
+        $order = order::instance_form_pm_orderid($orderid);
 
         $user = \core_user::get_user($userid);
 
@@ -189,10 +189,13 @@ class notifications {
             return false;
         }
 
+        $notes = $order->get_order_notes();
+        $lastnote = reset($notes);
+
         $a = (object)[
             'fee'      => $fee, // Cost before discount.
-            'cost'     => $item->cost, // Cost after discount.
-            'method'   => $item->method,
+            'cost'     => $order->get_cost(), // Cost after discount.
+            'method'   => $lastnote->type . '/' . $lastnote->subtype,
             'url'      => $url,
             'fullname' => fullname($user),
         ];

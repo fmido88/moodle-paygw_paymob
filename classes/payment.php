@@ -88,15 +88,11 @@ class payment extends requester {
         } else if (!empty($USER->phone2)) {
             $userphone = $USER->phone2;
         } else {
-            $sql = "SELECT ui.id, ui.data
-                    FROM {user_info_data} ui
-                    JOIN {user_info_field} uf ON ui.fieldid = uf.id
-                    WHERE ui.userid = :userid
-                    AND uf.shortname = :phone";
-            $params = ['userid' => $USER->id, 'phone' => 'phone'];
-            $records = $DB->get_records_sql($sql, $params);
-            if (!empty($records)) {
-                $userphone = reset($records)->data;
+            foreach($USER->profile as $field => $data) {
+                if (stripos($field, 'phone') !== false) {
+                    $userphone = $data;
+                    break;
+                }
             }
         }
 

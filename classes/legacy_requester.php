@@ -174,11 +174,12 @@ class legacy_requester {
         } else if (!empty($USER->phone2)) {
             $userphone = $USER->phone2;
         } else {
-            // Get the ID of the custom profile field for phone number.
-            $phonefieldid = $DB->get_field('user_info_field', 'id', ['shortname' => 'phone']);
-
-            // Get the phone number from the user_info_data table using the field ID and user ID.
-            $userphone = $DB->get_field('user_info_data', 'data', ['userid' => $USER->id, 'fieldid' => $phonefieldid]);
+            foreach($USER->profile as $field => $data) {
+                if (stripos($field, 'phone') !== false) {
+                    $userphone = $data;
+                    break;
+                }
+            }
         }
 
         if (empty($userphone)) {
@@ -234,13 +235,6 @@ class legacy_requester {
         $payment = $this->http_post("acceptance/payment_keys", $data);
 
         if (!empty($payment) && isset($payment->token)) {
-            $data = new \stdClass;
-            $data->pm_orderid = $orderid;
-            $data->cost       = $fee / 100;
-            $data->userid     = $USER->id;
-            $data->username   = $USER->username;
-            $data->intid      = $intid;
-            $DB->insert_record('paygw_paymob', $data);
 
             $return = new \stdClass;
             $return->orderid  = $orderid;

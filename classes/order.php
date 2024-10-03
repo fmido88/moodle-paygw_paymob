@@ -267,12 +267,19 @@ class order {
      * @return float
      */
     public function get_amount_cents() {
-        $country = utils::get_country_code($this->get_gateway_config()->public_key);
+        $islegacy = !empty($this->get_gateway_config()->legacy);
+        if ($islegacy) {
+            $country = 'egy';
+        } else {
+            $country = utils::get_country_code($this->get_gateway_config()->public_key);
+        }
+
         if ($country == 'omn') {
             $cents = 1000;
         } else {
             $cents = 100;
         }
+
         return (int)round($this->cost * $cents);
     }
     /**
@@ -383,6 +390,7 @@ class order {
         }
         return true;
     }
+
     /**
      * Save the payment and process the order
      * This will automatically update the record.

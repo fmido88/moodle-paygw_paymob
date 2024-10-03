@@ -206,14 +206,17 @@ class callback {
                 exit();
             }
 
-            $order->update_status('processing');
+            if ($order->get_status() !== 'success') {
+                $order->update_status('processing');
+            }
+
             $msg = get_string('paymentresponse', 'paygw_paymob', $order->get_status());
             $type = \core\notification::SUCCESS;
 
         } else if ($status !== 'failed') {
 
             $order->update_status($status);
-            $msg = get_string('paymentcancelled', 'paygw_paymob') . ": " .$gatewaymsg;
+            $msg = get_string('paymentcancelled', 'paygw_paymob', $gatewaymsg);
             $type = \core\notification::INFO;
 
         } else {

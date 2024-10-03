@@ -116,6 +116,10 @@ class utils {
      * @return string
      */
     public static function get_country_code($code) {
+        if (empty($code)) {
+            return '';
+        }
+
         return (string)substr($code, 0, 3);
     }
 
@@ -308,9 +312,13 @@ class utils {
     /**
      * Get the order id from the response.
      * @param string $merchantintentionid
-     * @return int
+     * @return ?int
      */
     public static function extract_order_id($merchantintentionid) {
+        if (empty($merchantintentionid)) {
+            return null;
+        }
+
         if (is_number($merchantintentionid)) {
             return (int)$merchantintentionid;
         }
