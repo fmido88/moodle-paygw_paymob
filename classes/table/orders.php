@@ -44,7 +44,7 @@ class orders extends \table_sql {
             'itemid'       => get_string('itemid', 'paygw_paymob'),
             'paymentarea'  => get_string('paymentarea', 'paygw_paymob'),
             'component'    => get_string('component', 'paygw_paymob'),
-            'payment_id'    => get_string('paymentid', 'paygw_paymob'),
+            'payment_id'   => get_string('paymentid', 'paygw_paymob'),
             'amount'       => get_string('amount', 'paygw_paymob'),
             'currency'     => get_string('currency'),
             'status'       => get_string('status'),
@@ -98,8 +98,12 @@ class orders extends \table_sql {
         global $DB;
         parent::query_db($pagesize, $useinitialsbar);
         foreach ($this->rawdata as $key => $record) {
-            $this->rawdata[$key]->order = new \paygw_paymob\order($record->id);
             $this->rawdata[$key]->hasnote = $DB->record_exists('paygw_paymob_order_notes', ['orderid' => $record->id]);
+            try {
+                $this->rawdata[$key]->order = new \paygw_paymob\order($record->id);
+            } catch (\dml_missing_record_exception $e) {
+                continue;
+            }
         }
     }
 
@@ -109,6 +113,9 @@ class orders extends \table_sql {
      * @return string
      */
     public function col_notes($row) {
+        if (empty($row->order)) {
+            return '';
+        }
         $order = $row->order;
         if (!$this->is_downloading()) {
             $notes = $order->get_order_notes_html();
@@ -193,6 +200,9 @@ class orders extends \table_sql {
      * @return string
      */
     public function col_amount($row) {
+        if (empty($row->order)) {
+            return '';
+        }
         $order = $row->order;
         return $order->get_cost();
     }
@@ -202,6 +212,9 @@ class orders extends \table_sql {
      * @return string
      */
     public function col_currency($row) {
+        if (empty($row->order)) {
+            return '';
+        }
         $order = $row->order;
         return $order->get_currency();
     }

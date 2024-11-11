@@ -116,14 +116,24 @@ class order {
             }
         }
 
-        $this->payable = helper::get_payable($this->component, $this->paymentarea, $this->itemid);
-        $surcharge = helper::get_gateway_surcharge('paymob');
+        try {
+            $this->payable = helper::get_payable($this->component, $this->paymentarea, $this->itemid);
+    
+            $this->rawcost = $this->payable->get_amount();
+            $this->currency = $this->payable->get_currency();
 
-        $this->rawcost = $this->payable->get_amount();
-        $this->currency = $this->payable->get_currency();
-        $this->cost = helper::get_rounded_cost($this->payable->get_amount(),
-                                               $this->payable->get_currency(),
-                                               $surcharge);
+        } catch (\dml_missing_record_exception $e) {
+            if (!empty($this->paymentid)) {
+                $paymentrecord = $DB->get_record('payment', ['id' => $this->paymentid], '*', MUST_EXIST);
+                $this->rawcost = $paymentrecord->cost;
+                $this->currency = $paymentrecord->currency;
+            } else {
+                throw $e;
+            }
+        }
+
+        $surcharge = helper::get_gateway_surcharge('paymob');
+        $this->cost = helper::get_rounded_cost($this->rawcost, $this->currency, $surcharge);
     }
 
     /**
@@ -295,7 +305,16 @@ class order {
      * @return int
      */
     public function get_account_id() {
-        return $this->payable->get_account_id();
+        global $DB;
+        if (isset($this->payable)) {
+            return $this->payable->get_account_id();
+        }
+
+        if (!empty($this->paymentid)) {
+            return (int)$DB->get_field('payment', 'accountid', ['id' => $this->paymentid]);
+        }
+
+        return 0;
     }
 
     /**
@@ -483,7 +502,7 @@ class order {
     public function get_order_notes_html() {
         global $OUTPUT;
         $notes = $this->get_order_notes();
-        $url = utils::get_api_url($this->get_gateway_config()->public_key);
+        $url = utils::get_api_url($this->get_gateway_config()->public_key ?? '');
         foreach ($notes as $note) {
             $tempdata = [
                 'integrationid'   => $note->integrationid,

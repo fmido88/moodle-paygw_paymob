@@ -109,8 +109,10 @@ class transaction extends \external_api {
 
         require_login(null, false);
         require_capability('paygw/paymob:ordersview', \context_system::instance());
+
+        $action = new actions($params['id']);
+
         try {
-            $action = new actions($params['id']);
             $data = $action->inquiry_order();
         } catch (\moodle_exception $e) {
             $data = $action->inquiry_transaction();

@@ -141,7 +141,12 @@ class utils {
      * @param bool $throw throw exception if cannot get the url
      */
     public static function get_api_url($key, $throw = false) {
-        $countrycode = self::get_country_code($key);
+        if (empty($key)) {
+            $countrycode = 'egy';
+        } else {
+            $countrycode = self::get_country_code($key);
+        }
+
         $domain = 'paymob.com';
         switch ($countrycode) {
             case 'are':
