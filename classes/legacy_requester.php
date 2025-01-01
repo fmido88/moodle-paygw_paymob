@@ -174,7 +174,7 @@ class legacy_requester {
         } else if (!empty($USER->phone2)) {
             $userphone = $USER->phone2;
         } else {
-            foreach($USER->profile as $field => $data) {
+            foreach ($USER->profile as $field => $data) {
                 if (stripos($field, 'phone') !== false) {
                     $userphone = $data;
                     break;

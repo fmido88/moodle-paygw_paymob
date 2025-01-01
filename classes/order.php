@@ -118,7 +118,7 @@ class order {
 
         try {
             $this->payable = helper::get_payable($this->component, $this->paymentarea, $this->itemid);
-    
+
             $this->rawcost = $this->payable->get_amount();
             $this->currency = $this->payable->get_currency();
 
