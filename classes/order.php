@@ -124,7 +124,7 @@ class order {
 
         } catch (\dml_missing_record_exception $e) {
             if (!empty($this->paymentid)) {
-                $paymentrecord = $DB->get_record('payment', ['id' => $this->paymentid], '*', MUST_EXIST);
+                $paymentrecord = $DB->get_record('payments', ['id' => $this->paymentid], '*', MUST_EXIST);
                 $this->rawcost = $paymentrecord->cost;
                 $this->currency = $paymentrecord->currency;
             } else {
@@ -311,7 +311,7 @@ class order {
         }
 
         if (!empty($this->paymentid)) {
-            return (int)$DB->get_field('payment', 'accountid', ['id' => $this->paymentid]);
+            return (int)$DB->get_field('payments', 'accountid', ['id' => $this->paymentid]);
         }
 
         return 0;
@@ -572,8 +572,18 @@ class order {
      */
     public static function instance_form_pm_orderid($pmorderid) {
         global $DB;
-        $record = $DB->get_record(self::TABLENAME, ['pm_orderid' => $pmorderid], 'id', MUST_EXIST);
-        return new order($record->id);
+
+        if ($record = $DB->get_record(self::TABLENAME, ['pm_orderid' => $pmorderid], 'id')) {
+            return new order($record->id);
+        } else {
+            $notes = $DB->get_records('paygw_paymob_order_notes', ['paymobid' => $pmorderid], 'id DESC', 'id, orderid', 0, 1);
+            if (!empty($notes)) {
+                return new order(reset($notes)->orderid);
+            }
+        }
+        throw new \dml_missing_record_exception(self::TABLENAME,
+                                               'SELECT * FROM {'.self::TABLENAME.'} WHERE pm_orderid = :pmorderid',
+                                               ['pmorderid' => $pmorderid]);
     }
     /**
      * Get all orders
