@@ -63,7 +63,7 @@ class requester {
     protected $country;
     /**
      * The callback url.
-     * @var string
+     * @var \moodle_url
      */
     protected $callbackurl;
     /**
