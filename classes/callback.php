@@ -69,12 +69,18 @@ class callback {
             $pmorderid = $obj['order_id'];
         }
 
-        if (isset($pmorderid)) {
-            $order = order::instance_form_pm_orderid($pmorderid);
-        } else {
-            $orderid = substr($obj['order']['merchant_order_id'], 0, -11);
+        if (!empty($obj['order']['merchant_order_id'])) {
+            if (strpos($obj['order']['merchant_order_id'], '_') !== false) {
+                $orderid = (int)substr($obj['order']['merchant_order_id'], 0, -11);
+            } else {
+                $orderid = (int)$obj['order']['merchant_order_id'];
+            }
 
             $order = new order($orderid);
+        } else if (isset($pmorderid)) {
+            $order = order::instance_form_pm_orderid($pmorderid);
+        } else {
+            die("can not find order id");
         }
 
         $config = $order->get_gateway_config();
