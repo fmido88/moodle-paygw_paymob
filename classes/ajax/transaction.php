@@ -86,7 +86,7 @@ class transaction extends \external_api {
         return new \external_single_structure([
             'url' => new \external_value(PARAM_URL, 'payment url', VALUE_OPTIONAL),
             'success' => new \external_value(PARAM_BOOL, 'Is returning url is successful'),
-            'error' => new \external_value(PARAM_TEXT, 'Error message', VALUE_OPTIONAL),
+            'error' => new \external_value(PARAM_RAW, 'Error message', VALUE_OPTIONAL),
         ]);
     }
     /**
