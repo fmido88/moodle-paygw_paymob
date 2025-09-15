@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'paygw_paymob';
-$plugin->release   = '3.5.1';
-$plugin->version   = 2024071900;
+$plugin->release   = '3.5.5';
+$plugin->version   = 2025091500;
 $plugin->requires  = 2022112800;
 $plugin->maturity  = MATURITY_STABLE;
