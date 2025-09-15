@@ -195,14 +195,14 @@ class utils {
     /**
      * Check if the mode is live or not.
      * @param string $key
-     * @return bool
+     * @return int
      */
     public static function is_live($key) {
         $mode = self::get_mode($key);
         if (empty($mode)) {
             return -1;
         }
-        return $mode === 'live';
+        return (int)($mode === 'live');
     }
 
     /**

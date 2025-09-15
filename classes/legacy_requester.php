@@ -89,7 +89,7 @@ class legacy_requester {
         ];
         $curl->setopt($options);
 
-        $response = $curl->post(self::HOST.$urlpath, json_encode($data), $options);
+        $response = $curl->post(self::HOST . $urlpath, json_encode($data), $options);
         $httpcode = $curl->get_info()['http_code'] ?? 0;
         $responsedata = json_decode($response, false);
 

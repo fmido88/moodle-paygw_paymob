@@ -16,6 +16,9 @@
 
 namespace paygw_paymob;
 
+use moodle_url;
+use stdClass;
+
 /**
  * Class payment
  *
@@ -51,6 +54,12 @@ class payment extends requester {
     protected $description;
 
     /**
+     * The user object.
+     * @var stdClass
+     */
+    protected stdClass $user;
+
+    /**
      * Constructor.
      * @param string $component
      * @param string $paymentarea
@@ -61,49 +70,66 @@ class payment extends requester {
         $this->description = $description;
 
         $this->order = order::created_order($component, $paymentarea, $itemid);
+        $this->user = $this->order->get_user();
         // Get all configuration preferences.
         $config = $this->order->get_gateway_config();
 
         $this->config = $config;
         $cents = 100;
+        $round = 2;
         if ('omn' == $this->country ) {
             $cents = 1000;
+            $round = 3;
         }
 
-        $this->amountcents = round($this->order->get_cost(), 2) * $cents;
+        $this->amountcents = round($this->order->get_cost(), $round) * $cents;
 
         $this->set_billing_data();
+
         parent::__construct($config->apikey, $config->public_key, $config->private_key);
     }
 
     /**
-     * Set the billing data
+     * Try to get the user phone.
+     * @return string
      */
-    protected function set_billing_data() {
-        global $USER, $DB;
-
+    protected function get_user_phone() {
+        global $CFG;
+        $user =& $this->user;
         $userphone = 'NA';
-        if (!empty($USER->phone1)) {
-            $userphone = $USER->phone1;
-        } else if (!empty($USER->phone2)) {
-            $userphone = $USER->phone2;
+        if (!empty($user->phone1)) {
+            $userphone = $user->phone1;
+        } else if (!empty($user->phone2)) {
+            $userphone = $user->phone2;
         } else {
-            foreach ($USER->profile as $field => $data) {
+
+            if (!isset($user->profile)) {
+                require_once("{$CFG->dirroot}/user/profile/lib.php");
+                profile_load_custom_fields($user);
+            }
+
+            foreach ($user->profile as $field => $data) {
                 if (stripos($field, 'phone') !== false) {
                     $userphone = $data;
                     break;
                 }
             }
         }
+        return (string)$userphone;
+    }
+    /**
+     * Set the billing data
+     */
+    protected function set_billing_data() {
 
         $this->billing = [
-            'email'        => $USER->email,
-            'first_name'   => $USER->firstname,
-            'last_name'    => $USER->lastname,
+            'email'        => $this->user->email,
+            'first_name'   => $this->user->firstname,
+            'last_name'    => $this->user->lastname,
             'street'       => 'NA',
-            'phone_number' => $userphone,
-            'city'         => $USER->city ?? 'NA',
-            'country'      => $USER->country ?? 'NA',
+            'phone_number' => $this->get_user_phone(),
+            'city'         => $this->user->city ?? 'NA',
+            'country'      => $this->user->country ?? 'NA',
             'state'        => 'NA',
             'postal_code'  => 'NA',
         ];
@@ -180,7 +206,7 @@ class payment extends requester {
      */
     public function create_payment() {
         global $USER;
-        $price = (int) (string) $this->amountcents;
+        $price = (int)(string)$this->amountcents;
 
         $data  = [
             'amount'            => $price,
@@ -207,9 +233,9 @@ class payment extends requester {
      * Get the payment url
      * this return array
      * 'success' => bool
-     * 'url' => \moodle_url
-     * 'error' => string of error message
-     * @return array
+     * 'url'     => \moodle_url
+     * 'error'   => string of error message
+     * @return array{success:bool, url: ?moodle_url, error: ?string}
      */
     public function get_intention_url() {
         $cost = $this->order->get_raw_cost();
@@ -236,7 +262,7 @@ class payment extends requester {
                 'clientSecret' => trim($request['client_secret']),
             ];
 
-            $url = new \moodle_url($urlbase . '/unifiedcheckout/', $params);
+            $url = new moodle_url($urlbase . '/unifiedcheckout/', $params);
         } else {
             $params = [
                 'component'   => $this->order->get_component(),
@@ -244,7 +270,7 @@ class payment extends requester {
                 'itemid'      => $this->order->get_itemid(),
                 'description' => $this->description,
             ];
-            $url = new \moodle_url('/payment/gateway/paymob/method.php', $params);
+            $url = new moodle_url('/payment/gateway/paymob/method.php', $params);
         }
 
         return [
@@ -254,7 +280,7 @@ class payment extends requester {
     }
     /**
      * Get array of integration id from the configurations
-     * @return array[int]
+     * @return int[]
      */
     private function get_integration_ids_array() {
         $allitegrations = explode(',' , $this->config->integration_ids_hidden);
@@ -263,10 +289,10 @@ class payment extends requester {
         $integrationids = [];
 
         foreach ($allitegrations as $entry) {
-            $parts = explode( ':', $entry );
+            $parts = explode(':', $entry);
             $id    = trim($parts[0]);
             if (isset($parts[2])) {
-                $currency = trim(substr( $parts[2], strpos( $parts[2], '(' ) + 1, -2 ));
+                $currency = trim(substr($parts[2], strpos($parts[2], '(') + 1, -2));
                 if (in_array($id, $this->config->integration_ids) && $currency === $this->order->get_currency()) {
                     $matchingids[] = $id;
                 }
@@ -275,8 +301,8 @@ class payment extends requester {
 
         if (!empty($matchingids)) {
             foreach ($matchingids as $id) {
-                $id = (int) $id;
-                if ( $id > 0 ) {
+                $id = (int)$id;
+                if ($id > 0) {
                     array_push($integrationids, $id);
                 }
             }

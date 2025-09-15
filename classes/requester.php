@@ -24,15 +24,30 @@
 
 namespace paygw_paymob;
 
+defined('MOODLE_INTERNAL') || die();
+
+use core\exception\moodle_exception;
+use core_useragent;
+use curl;
+use moodle_url;
+
+require_once($CFG->libdir . '/filelib.php');
+
 /**
  * All function needed to perform an API workflow with Paymob.
  */
 class requester {
     /**
+     * If this is developing environment to log data.
+     */
+    public const DEV = false;
+
+    /**
      * The API key.
      * @var string
      */
     protected $apikey;
+
     /**
      * The authtoken from the request.
      * @var string
@@ -45,30 +60,35 @@ class requester {
      * @var string
      */
     protected $publickey;
+
     /**
      * The private key from paymob
      * dashboard.
      * @var string
      */
     protected $privatekey;
+
     /**
      * The base of api url endpoint.
      * @var string
      */
     protected $apiurl;
+
     /**
      * Country code.
      * @var string
      */
     protected $country;
+
     /**
      * The callback url.
-     * @var \moodle_url
+     * @var moodle_url
      */
-    protected $callbackurl;
+    protected moodle_url $callbackurl;
+
     /**
      * Reference for endpoints actions.
-     *  'refund'         => Refund transaction POST
+     * 'refund'          => Refund transaction POST
      * 'void'            => Voiding a transaction POST
      * 'auth'            => Get auth tokens POST
      * 'inquiry_transid' => Inquiry transaction by transaction id  GET
@@ -76,7 +96,7 @@ class requester {
      * 'auth-capture'    => auth-capture transaction
      * 'intention'       => Intention
      * 'pay-token'       => Pay with saved token,
-     * 'payment-links'   => create payment link,
+     * 'payment-links'   => create payment link,.
      */
     protected const ACTIONS = [
         'refund'          => '/api/acceptance/void_refund/refund',
@@ -89,6 +109,7 @@ class requester {
         'pay-token'       => '/api/acceptance/payments/pay',
         'payment-links'   => '/api/ecommerce/payment-links',
     ];
+
     /**
      * Constructor.
      * @param string $apikey
@@ -96,56 +117,53 @@ class requester {
      * @param string $privatekey
      */
     public function __construct($apikey, $publickey, $privatekey) {
-        $this->apikey = $apikey;
-        $this->publickey = $publickey;
+        $this->apikey     = $apikey;
+        $this->publickey  = $publickey;
         $this->privatekey = $privatekey;
 
         if (!utils::match_countries($privatekey, $publickey)) {
             if (AJAX_SCRIPT) {
-                throw new \moodle_exception('not_same_country', 'paygw_paymob');
-            } else {
-                debugging('The countries in the provided keys aren\'t the same.');
+                throw new moodle_exception('not_same_country', 'paygw_paymob');
             }
+            debugging('The countries in the provided keys aren\'t the same.');
         }
 
         $this->country = utils::get_country_code($this->privatekey);
 
-        $this->callbackurl = new \moodle_url("/payment/gateway/paymob/callback.php");
+        $this->callbackurl = new moodle_url('/payment/gateway/paymob/callback.php');
     }
 
     /**
-     * Get the base of endpoint url
+     * Get the base of endpoint url.
      */
-    protected function get_api_url() {
-
+    protected function get_api_url(): string {
         if (isset($this->apiurl)) {
             return $this->apiurl;
         }
 
         $this->apiurl = utils::get_api_url($this->privatekey, true);
+
         return $this->apiurl;
     }
 
     /**
      * Function to perform requests to paymob endpoint.
-     * @param string $action
-     * @param array $data
-     * @param string $method post or get
-     * @param string $authheader override the auth header
+     * @param  string        $action
+     * @param  array         $data
+     * @param  string        $method     post or get
+     * @param  string        $authheader override the auth header
      * @return object|string object of returned data or string on error.
      */
-    protected function request($action, $data = [], $method = "post", $authheader = null) {
-        global $CFG;
-        require_once($CFG->libdir."/filelib.php");
+    protected function request($action, $data = [], $method = 'post', $authheader = null) {
         $method = strtolower($method);
 
-        $curl = new \curl();
+        $curl = new curl();
 
         if (array_key_exists($action, self::ACTIONS)) {
             $action = self::ACTIONS[$action];
         }
 
-        $url = $this->get_api_url() . $action;
+        $url     = $this->get_api_url() . $action;
         $options = [
             'url'            => $url,
             'returntransfer' => true,
@@ -155,8 +173,10 @@ class requester {
 
         $options['httpheader'] = ['Content-Type: application/json'];
 
-        if ($authheader) {
-            $options['httpheader'][] = $authheader;
+        if ($authheader !== null) {
+            if (!empty($authheader)) {
+                $options['httpheader'][] = $authheader;
+            }
         } else if ($method == 'post') {
             $options['httpheader'][] = 'Authorization: Token ' . $this->privatekey;
         } else {
@@ -172,13 +192,15 @@ class requester {
             $response = $curl->get($url, $data);
         }
 
-        $httpcode = $curl->get_info()['http_code'] ?? 0;
+        $httpcode     = $curl->get_info()['http_code'] ?? 0;
         $responsedata = json_decode($response, false);
 
         $curl->cleanopt();
-        if ($httpcode != 200 && $httpcode != 201 ) {
+
+        if ($httpcode != 200 && $httpcode != 201) {
             // Endpoint returned an error.
-            self::debug($response, "endpoint return error ");
+            self::debug($response, 'endpoint return error ');
+
             return $responsedata;
         }
 
@@ -194,37 +216,41 @@ class requester {
             'api_key' => $this->apikey,
         ];
 
-        $request = $this->request('/api/auth/tokens', $data);
+        $request = $this->request('auth', $data, 'post', '');
 
         if ($request && isset($request->token)) {
             return $request->token;
         }
 
-        self::debug($request, "Requesting token failed");
+        self::debug($request, 'Requesting token failed');
+
         return false;
     }
 
     /**
-     * Get the auth token
+     * Get the auth token.
      * @return string
      */
-    protected function get_auth_token() {
-        if (!isset($this->authtoken)) {
+    public function get_auth_token() {
+        if (empty($this->authtoken)) {
             $this->authtoken = $this->request_token();
         }
+
         return $this->authtoken;
     }
 
     /**
-     * Get the hmac secret key
+     * Get the hmac secret key.
      * @return string|null
      */
     public function get_hmac() {
         $request = $this->request('/api/auth/hmac_secret/get_hmac', [], 'get');
+
         if (isset($request->hmac_secret)) {
             return $request->hmac_secret;
         }
         self::debug($request, 'error while trying to get the hmac');
+
         return null;
     }
 
@@ -235,11 +261,11 @@ class requester {
     public function get_integration_ids() {
         if (!utils::match_mode($this->publickey, $this->privatekey)) {
             if (AJAX_SCRIPT) {
-                throw new \moodle_exception('not_same_mode', 'paygw_paymob');
-            } else {
-                debugging('public and private keys are not in the same mode');
-                return null;
+                throw new moodle_exception('not_same_mode', 'paygw_paymob');
             }
+            debugging('public and private keys are not in the same mode');
+
+            return null;
         }
 
         $islive = utils::is_live($this->privatekey);
@@ -255,14 +281,15 @@ class requester {
         $request = $this->request('/api/ecommerce/integrations', $data, 'get');
 
         if (!empty($request->results)) {
-
             $integrationids = [];
+
             foreach ($request->results as $key => $integration) {
                 if (empty($integration->id)) {
                     continue;
                 }
 
                 $type = $integration->gateway_type;
+
                 if ('VPC' == $type) {
                     $type = 'Card';
                 } else if ('CAGG' == $type) {
@@ -275,8 +302,7 @@ class requester {
                 $online = $online || ($integration->integration_type == 'online');
 
                 if ($online && !$integration->is_standalone
-                    && ($integration->is_live == $islive || $nomode)) {
-
+                            && ($integration->is_live == $islive || $nomode)) {
                     $integrationids[$integration->id] = [
                         'id'       => $integration->id,
                         'type'     => $type,
@@ -295,38 +321,64 @@ class requester {
         }
 
         self::debug($request, 'Error while requesting integration ids');
+
         return null;
     }
+
     /**
      * Display debug message.
      *
-     * @param string|object $request
-     * @param string $msg
+     * @param  string|object     $request
+     * @param  string            $msg
      * @throws \moodle_exception
      * @return void
      */
     protected static function debug($request, $msg = '') {
         $responseerror = '';
+
         if (is_string($request)) {
             $responseerror .= $request;
-        } else {
+        } else if (is_iterable($request)) {
             foreach ($request as $key => $value) {
                 $responseerror .= $key . ': ' . $value . "\n";
             }
         }
 
+        self::log($request, $msg);
+
         if (AJAX_SCRIPT) {
-            throw new \moodle_exception("error in response: \n".$responseerror);
+            throw new moodle_exception("error in response: \n" . $responseerror);
         }
         debugging($msg . ' ' . $responseerror, DEBUG_DEVELOPER);
     }
+
     /**
-     * Log the data for the cases of debugging
-     * @param mixed $data
+     * Log the data for the cases of debugging.
+     * @param  mixed $data
      * @return void
      */
-    public static function log($data) {
+    public static function log(...$data) {
         // Using this for developing only.
-        // Erase any contents in live versions.
+        if (!self::DEV) {
+            return;
+        }
+
+        ob_start();
+
+        $traceobject = debug_backtrace();
+
+        echo userdate(time());
+
+        echo "\n";
+        var_dump(...$data);
+
+        echo "Debug trace object: \n";
+        var_dump($traceobject);
+
+        echo "\n";
+
+        $file = fopen(__DIR__ . DIRECTORY_SEPARATOR . 'logger.log', 'a');
+        fwrite($file, ob_get_clean());
+        fclose($file);
     }
 }

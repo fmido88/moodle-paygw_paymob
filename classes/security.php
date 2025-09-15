@@ -212,7 +212,7 @@ class security {
                 $data['source_data_sub_type'] .
                 $data['source_data_type'] .
                 $data['success'];
-        $hash = hash_hmac( 'sha512', $str, $key );
+        $hash = hash_hmac('sha512', $str, $key);
         return $hash === $hmac;
     }
 
