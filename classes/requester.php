@@ -150,6 +150,7 @@ class requester {
             'url'            => $url,
             'returntransfer' => true,
             'failonerror'    => false,
+            'useragent'      => core_useragent::get_user_agent_string(),
         ];
 
         $options['httpheader'] = ['Content-Type: application/json'];
