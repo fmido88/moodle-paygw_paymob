@@ -15,9 +15,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace paygw_paymob\table;
-
-use paygw_paymob\order;
-use stdClass;
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->libdir . '/tablelib.php');
@@ -116,11 +113,10 @@ class orders extends \table_sql {
      * @return string
      */
     public function col_notes($row) {
-
-        if (!$order = static::get_order($row)) {
+        if (empty($row->order)) {
             return '';
         }
-
+        $order = $row->order;
         if (!$this->is_downloading()) {
             $notes = $order->get_order_notes_html();
             $out = [];
@@ -204,11 +200,10 @@ class orders extends \table_sql {
      * @return string
      */
     public function col_amount($row) {
-
-        if (!$order = static::get_order($row)) {
+        if (empty($row->order)) {
             return '';
         }
-
+        $order = $row->order;
         return $order->get_cost();
     }
     /**
@@ -217,11 +212,10 @@ class orders extends \table_sql {
      * @return string
      */
     public function col_currency($row) {
-
-        if (!$order = static::get_order($row)) {
+        if (empty($row->order)) {
             return '';
         }
-
+        $order = $row->order;
         return $order->get_currency();
     }
 
@@ -235,18 +229,6 @@ class orders extends \table_sql {
         if (in_array($column, ['timecreated', 'timemodified'])) {
             return userdate($row->$column);
         }
-        return format_string($row->$column);
-    }
-
-    /**
-     * Extract the order class from the row data.
-     * @param stdClass $row
-     * @return order|null
-     */
-    protected static function get_order(stdClass $row): ?order {
-        if (isset($row->order) && $row->order instanceof order) {
-            return $row->order;
-        }
-        return null;
+        return $row->$column;
     }
 }

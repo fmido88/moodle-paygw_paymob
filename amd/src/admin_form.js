@@ -187,15 +187,14 @@ export const init = (data) => {
             $.each(integrationHidden, function(i, avId) {
                 var selected = '';
                 if (avId !== '') {
-                    var integrationId = avId.split(" :");
+                    var integrationId = avId.split(" :")[0].trim();
                     $.each(ajaxObject.integration_id, function(i, id) {
-                        if (integrationId === id || parseInt(integrationId) === parseInt(id)) {
+                        if (integrationId == id || parseInt(integrationId) === parseInt(id)) {
                             selected = 'selected';
                         }
                     });
+                    $('#id_integration_ids_select').append("<option " + selected + " value=" + integrationId + ">" + avId + "</option>");
                 }
-
-                $('#id_integration_ids_select').append("<option " + selected + " value=" + avId + ">" + avId + "</option>");
             });
         }
     });

@@ -45,7 +45,7 @@ class actions extends requester {
 
         $config = $this->order->get_gateway_config();
 
-        parent::__construct($config->apikey, $config->publickey, $config->privatekey);
+        parent::__construct($config->apikey, $config->public_key, $config->private_key);
     }
 
     /**
@@ -69,7 +69,7 @@ class actions extends requester {
             'transaction_id' => $transid,
             'amount_cents'   => !empty($amountcents) ? $amountcents : $original,
         ];
-        $response = $this->request('refund', $data, 'post');
+        $response = $this->request(self::ACTIONS['refund'], $data, 'post');
         self::log($response);
         $status = utils::get_order_status($response);
         if ($status == 'refund' || $status == 'refunded') {
@@ -97,7 +97,7 @@ class actions extends requester {
         $data = [
             'transaction_id' => $transid,
         ];
-        $response = $this->request('void', $data, 'post');
+        $response = $this->request(self::ACTIONS['void'], $data, 'post');
         self::log($response);
         $status = utils::get_order_status($response);
         if ($status == 'void' || $status == 'voided') {

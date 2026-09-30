@@ -354,7 +354,7 @@ class requester {
 
     /**
      * Log the data for the cases of debugging.
-     * @param  mixed ...$data
+     * @param  mixed $data
      * @return void
      */
     public static function log(...$data) {

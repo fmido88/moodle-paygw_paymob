@@ -53,11 +53,16 @@ class gateway extends \core_payment\gateway {
         $accounts = \core_payment\helper::get_payment_accounts_menu($context);
         $accounts = array_keys($accounts);
         foreach ($accounts as $id) {
-            $account = new \core_payment\account($id);
+            $gateway = null;
+            try {
+                $account = new \core_payment\account($id);
+            } catch (\Exception $e) {
+                continue;
+            }
             if ($account && $account->get('enabled')) {
                 $gateway = $account->get_gateways()['paymob'] ?? null;
             }
-            if (empty($gateway)) {
+            if (empty($gateway) || !$gateway->get('enabled')) {
                 continue;
             }
             $config = $gateway->get_configuration();
@@ -75,7 +80,7 @@ class gateway extends \core_payment\gateway {
      * @param \core_payment\form\account_gateway $form
      */
     public static function add_configuration_to_gateway_form(\core_payment\form\account_gateway $form): void {
-        global $OUTPUT, $CFG;
+        global $OUTPUT, $CFG, $PAGE;
 
         $mform = $form->get_mform();
 
@@ -106,7 +111,7 @@ class gateway extends \core_payment\gateway {
         $mform->addElement('hidden', 'hmac_hidden');
         $mform->setType('hmac_hidden', PARAM_ALPHANUMEXT);
 
-        $options = [];
+        $options = self::get_integration_options($form);
         $select = $mform->addElement('select', 'integration_ids_select', get_string('integration_ids', 'paygw_paymob'), $options);
         $select->setMultiple(true);
 
@@ -127,40 +132,36 @@ class gateway extends \core_payment\gateway {
 
         $mform->addElement('html', $OUTPUT->notification(get_string('legacy_warning', 'paygw_paymob'), 'warning', false));
 
-        self::add_js($mform);
+        self::add_js($form);
     }
     /**
      * Get integration options.
-     * @param \MoodleQuickForm $mform
+     * @param \core_payment\form\account_gateway|\MoodleQuickForm $form
      * @return array
      */
-    private static function get_integration_options($mform) {
-        $id = optional_param('id', null, PARAM_INT);
-        if (!$id) {
+    private static function get_integration_options($form) {
+        if ($form instanceof \core_payment\form\account_gateway) {
+            $gateway = $form->get_gateway_persistent();
+            $config = (object)$gateway->get_configuration();
+            $all = $config->integration_ids_hidden ?? '';
+            if (empty($all)) {
+                $all = $form->get_mform()->exportValue('integration_ids_hidden') ?? '';
+            }
+        } else if ($form instanceof \MoodleQuickForm) {
+            $all = $form->exportValue('integration_ids_hidden') ?? '';
+        } else {
             return [];
-        }
-
-        $account = new \core_payment\account($id);
-        $gateway = $account->get_gateways(false)['paymob'] ?? null;
-        if (!$gateway) {
-            return [];
-        }
-
-        $config = (object)$gateway->get_configuration();
-        $all = $config->integration_ids_hidden ?? '';
-        if (empty($all)) {
-            $all = $mform->exportValue('integration_ids_hidden') ?? '';
         }
         return \paygw_paymob\utils::get_integration_ids_from_string($all);
     }
     /**
      * Add js to the admin form.
-     * @param \MoodleQuickForm $mform
+     * @param \core_payment\form\account_gateway|\MoodleQuickForm $form
      */
-    private static function add_js($mform) {
+    private static function add_js($form) {
         global $PAGE;
 
-        $data = self::get_js_params($mform);
+        $data = self::get_js_params($form);
 
         $PAGE->requires->js_call_amd('paygw_paymob/admin_form', 'init', ['data' => json_encode($data)]);
     }
@@ -185,37 +186,39 @@ class gateway extends \core_payment\gateway {
     }
     /**
      * get the args to pass to js.
-     * @param \MoodleQuickForm $mform
+     * @param \core_payment\form\account_gateway|\MoodleQuickForm $form
+     * @return \stdClass
      */
-    private static function get_js_params($mform) {
-        $values = (object)$mform->exportValues();
-        $data = (object)[
-            'integration_id'     => $values->integration_ids ?? '',
-            'integration_hidden' => $values->integration_ids_hidden ?? '',
-            'hmac_hidden'        => $values->hmac_hidden ?? '',
-        ];
-
-        $id = optional_param('id', null, PARAM_INT);
-        if (!$id) {
-            return $data;
-        }
-
-        $account = new \core_payment\account($id);
-        $gateway = $account->get_gateways(false)['paymob'] ?? null;
-        if (!$gateway) {
-            return $data;
-        }
-
-        $config = (object)$gateway->get_configuration();
-        $data->integration_id = $config->integration_ids ?? $data->integration_ids;
-        $data->integration_hidden = $config->integration_ids_hidden ?? $data->integration_hidden;
-        $data->hmac_hidden = $config->hmac_hidden ?? $data->hmac_hidden;
-
-        if (empty($data->integration_id)) {
-            $data->integration_id = [];
+    private static function get_js_params($form) {
+        if ($form instanceof \core_payment\form\account_gateway) {
+            $mform = $form->get_mform();
+            $gateway = $form->get_gateway_persistent();
         } else {
-            $data->integration_id = json_decode($data->integration_id);
+            $mform = $form;
+            $gateway = null;
         }
+
+        $values = (object)$mform->exportValues();
+        $config = $gateway ? (object)$gateway->get_configuration() : (object)[];
+
+        $integrationid = !empty($values->integration_ids) ? $values->integration_ids : ($config->integration_ids ?? '');
+        $integrationhidden = !empty($values->integration_ids_hidden) ? $values->integration_ids_hidden : ($config->integration_ids_hidden ?? '');
+        $hmachidden = !empty($values->hmac_hidden) ? $values->hmac_hidden : ($config->hmac_hidden ?? '');
+
+        if (empty($integrationid)) {
+            $integrationid = [];
+        } else if (is_string($integrationid)) {
+            $decoded = json_decode($integrationid);
+            $integrationid = is_array($decoded) ? $decoded : [];
+        } else if (!is_array($integrationid)) {
+            $integrationid = [];
+        }
+
+        $data = (object)[
+            'integration_id'     => $integrationid,
+            'integration_hidden' => $integrationhidden,
+            'hmac_hidden'        => $hmachidden,
+        ];
 
         return $data;
     }
@@ -282,17 +285,20 @@ class gateway extends \core_payment\gateway {
                 $errors['integration_ids_select'] = get_string('atleast_one_integration', 'paygw_paymob');
                 $ok = false;
             } else {
-                $integrationids = json_decode($data->integration_ids);
-                $all = utils::get_integration_ids_from_string($data->integration_ids_hidden, true);
+                $integrationids = is_string($data->integration_ids) ? json_decode($data->integration_ids) : $data->integration_ids;
+                $all = utils::get_integration_ids_from_string($data->integration_ids_hidden ?? '', true);
                 $types = [];
-                foreach ($integrationids as $id) {
-                    $types[] = $all[$id]->type;
+                if (is_array($integrationids)) {
+                    foreach ($integrationids as $id) {
+                        if (isset($all[$id]->type)) {
+                            $types[] = $all[$id]->type;
+                        }
+                    }
                 }
                 if (count($types) > count(array_unique($types))) {
                     $errors['integration_ids_select'] = get_string('no_same_type_integrations', 'paygw_paymob');
                     $ok = false;
                 }
-
             }
 
             if (!$ok) {
